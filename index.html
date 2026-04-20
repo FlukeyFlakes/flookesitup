@@ -1284,7 +1284,7 @@
           </div>
           <div class="comment-form-area">
             <h4>Leave a Comment</h4>
-            <div class="comment-at" id="commentAt">Video will pause and timecode will be captured automatically when you post. Or use 📍 to pin a specific frame first.</div>
+            <div class="comment-at" id="commentAt">Pause the video at any point, then post your comment — the timecode will be captured automatically.</div>
             <div class="field"><label>Your Name</label><input type="text" id="commenterName" placeholder="e.g. Sarah" oninput="localStorage.setItem('reviewer_name',this.value)"></div>
             <div class="field"><label>Comment</label><textarea id="commenterText" placeholder="Type your feedback here..."></textarea></div>
             <div class="comment-form-row">
@@ -1487,12 +1487,11 @@
   function downloadVideo() {
     const video = document.getElementById('reviewVideo');
     if (!video || !video.src) return;
-    // Convert dl.dropboxusercontent.com direct URL back to a Dropbox ?dl=1 URL.
-    // Dropbox serves that with Content-Disposition: attachment, which triggers
-    // a native browser Save dialog without any CORS fetch needed.
-    let src = video.src.split('?')[0]; // strip existing query params
-    src = src.replace('dl.dropboxusercontent.com', 'www.dropbox.com');
-    window.open(src + '?dl=1', '_blank');
+    // Keep the full URL (including rlkey/st params Dropbox needs), just swap
+    // the domain back to www.dropbox.com and append dl=1 to force a download.
+    let src = video.src.replace('dl.dropboxusercontent.com', 'www.dropbox.com');
+    const sep = src.includes('?') ? '&' : '?';
+    window.open(src + sep + 'dl=1', '_blank');
   }
 </script>
 </body>
