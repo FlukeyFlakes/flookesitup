@@ -1185,32 +1185,14 @@
     loadReviewList();
   }
 
-  const RESEND_KEY = 're_NkRa4qXJ_Ceua1b34bBDe5QE5RP3B2tRv';
+  const WORKER_URL = 'https://flookes-email.flookes.workers.dev';
 
   async function sendCommentEmail(reviewTitle, author, timecode, comment, reviewId) {
-    const reviewUrl = `https://www.flookesitup.com#review~${reviewId}`;
     try {
-      await fetch('https://api.resend.com/emails', {
+      await fetch(WORKER_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${RESEND_KEY}` },
-        body: JSON.stringify({
-          from: 'reviews@send.flookesitup.com',
-          to: 'flookes@gmail.com',
-          subject: `New comment on "${reviewTitle}"`,
-          html: `
-            <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#0f0f0f;color:#e0ddd8;padding:32px;border-radius:4px">
-              <div style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#e8c547;margin-bottom:20px">Flookes Review System</div>
-              <h2 style="font-size:20px;font-weight:600;margin-bottom:24px;color:#fff">New Comment</h2>
-              <table style="width:100%;border-collapse:collapse">
-                <tr><td style="padding:10px 0;border-bottom:1px solid #222;font-size:12px;color:#888;width:100px">Project</td><td style="padding:10px 0;border-bottom:1px solid #222;font-size:14px;color:#fff">${reviewTitle}</td></tr>
-                <tr><td style="padding:10px 0;border-bottom:1px solid #222;font-size:12px;color:#888">From</td><td style="padding:10px 0;border-bottom:1px solid #222;font-size:14px;color:#fff">${author}</td></tr>
-                <tr><td style="padding:10px 0;border-bottom:1px solid #222;font-size:12px;color:#888">Timecode</td><td style="padding:10px 0;border-bottom:1px solid #222;font-size:14px;color:#e8c547;font-family:monospace">${timecode}</td></tr>
-                <tr><td style="padding:10px 0;font-size:12px;color:#888;vertical-align:top">Comment</td><td style="padding:10px 0;font-size:14px;color:#fff;line-height:1.6">${comment}</td></tr>
-              </table>
-              <a href="${reviewUrl}" style="display:inline-block;margin-top:28px;padding:12px 24px;background:#e8c547;color:#0a0a0a;font-size:12px;font-weight:600;text-decoration:none;letter-spacing:0.1em;text-transform:uppercase">View Review →</a>
-            </div>
-          `
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reviewTitle, author, timecode, comment, reviewId })
       });
     } catch(e) { /* silent fail — comment is already saved */ }
   }
