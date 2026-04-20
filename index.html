@@ -903,7 +903,7 @@
     const isReview = page === 'review';
     document.getElementById('navLinks').style.display          = isReview ? 'none' : '';
     document.getElementById('hbg').style.display               = isReview ? 'none' : '';
-    document.getElementById('navScreeningTitle').style.display = isReview ? '' : 'none';
+    document.getElementById('navScreeningTitle').style.display = isReview ? 'inline' : 'none';
 
     if (page === 'review' && subId) {
       try { history.pushState({}, '', `#review~${subId}`); } catch(e) {}
