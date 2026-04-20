@@ -87,6 +87,15 @@
     .nav-links a:hover { color: var(--text); }
     .nav-links a.active { color: var(--gold); }
 
+    .nav-screening-title {
+      display: none;
+      font-family: var(--font-hero);
+      font-size: 1rem; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--gold);
+      position: absolute; left: 50%; transform: translateX(-50%);
+      white-space: nowrap;
+    }
+
     .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; }
     .hamburger span { display: block; width: 20px; height: 1px; background: var(--dim); transition: all 0.25s; }
     .hamburger.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); background: var(--text); }
@@ -553,7 +562,8 @@
 <!-- NAV -->
 <nav>
   <span class="nav-monogram" onclick="go('home')">F</span>
-  <ul class="nav-links">
+  <span class="nav-screening-title" id="navScreeningTitle">Client Screening</span>
+  <ul class="nav-links" id="navLinks">
     <li><a onclick="go('home')"             data-page="home">General Reel</a></li>
     <li><a onclick="go('docustyle')"        data-page="docustyle">DocuStyle</a></li>
     <li><a onclick="go('comedy')"           data-page="comedy">Comedy</a></li>
@@ -817,8 +827,6 @@
   }
 
   function toDownloadUrl(url) {
-    // Convert direct CDN URL back to www.dropbox.com with dl=1 so Dropbox
-    // serves it with Content-Disposition: attachment (forces browser download).
     let u = url.replace('dl.dropboxusercontent.com', 'www.dropbox.com');
     const sep = u.includes('?') ? '&' : '?';
     return u + sep + 'dl=1';
@@ -891,6 +899,13 @@
     if (el) el.classList.add('active');
     document.querySelectorAll(`[data-page="${page}"]`).forEach(a => a.classList.add('active'));
     window.scrollTo({ top: 0, behavior: 'instant' });
+
+    // On review page: hide nav links & hamburger, show "Client Screening" title
+    const isReview = page === 'review';
+    document.getElementById('navLinks').style.display        = isReview ? 'none' : '';
+    document.getElementById('hbg').style.display             = isReview ? 'none' : '';
+    document.getElementById('navScreeningTitle').style.display = isReview ? '' : 'none';
+
     if (page === 'review' && subId) {
       try { history.pushState({}, '', `#review~${subId}`); } catch(e) {}
       loadReview(subId);
@@ -1363,15 +1378,13 @@
     if (tabEl) document.getElementById('commentsHeader').textContent = `Comments — ${tabEl.textContent}`;
     const video = document.getElementById('reviewVideo');
     if (tabEl && tabEl.dataset.url) {
-      video.src = tabEl.dataset.url;
-      video.load();
-      // Keep the download link pointing at the currently active cut
+      video.src = tabEl.dataset.url; video.load();
       const dlBtn = document.getElementById('downloadBtn');
       if (dlBtn) dlBtn.href = toDownloadUrl(tabEl.dataset.url);
     }
     document.getElementById('tcDisplay').textContent = '00:00:00:00';
     const el = document.getElementById('commentAt');
-    el.textContent = 'Pause the video at any point, then post your comment — the timecode will be captured automatically.';
+    el.textContent = 'Capture a timecode before posting.';
     el.style.color = '';
     loadComments(reviewId, index);
   }
