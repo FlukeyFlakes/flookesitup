@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flookes Arcade</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg:     #0a0a0a;
+      --panel:  #111;
+      --border: #1e1e1e;
+      --gold:   #e8c547;
+      --green:  #4caf50;
+      --red:    #e74c3c;
+      --text:   #d8d4ce;
+      --dim:    #555;
+      --px:     'Press Start 2P', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--px);
+      min-height: 100vh;
+      -webkit-font-smoothing: none;
+    }
+
+    /* scanlines */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 999; pointer-events: none;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px);
+    }
+
+    /* ── HEADER ─────────────────────────────── */
+    header {
+      text-align: center;
+      padding: 28px 16px 16px;
+      border-bottom: 2px solid var(--gold);
+      position: relative;
+    }
+    header h1 { font-size: 1.1rem; color: var(--gold); letter-spacing: 0.12em; text-shadow: 0 0 20px rgba(232,197,71,0.4); }
+    header p  { font-size: 0.38rem; color: var(--dim); margin-top: 8px; letter-spacing: 0.2em; }
+    .back-link {
+      position: absolute; top: 50%; right: 20px; transform: translateY(-50%);
+      font-size: 0.35rem; color: var(--dim); text-decoration: none; letter-spacing: 0.1em;
+      border: 1px solid var(--border); padding: 6px 10px; transition: color 0.2s, border-color 0.2s;
+    }
+    .back-link:hover { color: var(--gold); border-color: var(--gold); }
+
+    /* ── TABS ───────────────────────────────── */
+    .tabs { display: flex; justify-content: center; gap: 4px; padding: 16px 8px; flex-wrap: wrap; }
+    .tab {
+      font-family: var(--px); font-size: 0.42rem; padding: 9px 14px;
+      background: var(--panel); border: 2px solid var(--border);
+      color: var(--dim); cursor: pointer; letter-spacing: 0.1em;
+      transition: all 0.1s;
+    }
+    .tab:hover { border-color: var(--gold); color: var(--text); }
+    .tab.active { border-color: var(--gold); color: var(--gold); background: rgba(232,197,71,0.06); }
+
+    /* ── PANELS ─────────────────────────────── */
+    .game-panel { display: none; padding: 16px 12px 40px; }
+    .game-panel.active { display: block; }
+
+    /* ── SHARED COMPONENTS ──────────────────── */
+    .pixel-btn {
+      font-family: var(--px); font-size: 0.4rem; padding: 10px 14px;
+      background: var(--panel); border: 2px solid var(--gold); color: var(--gold);
+      cursor: pointer; letter-spacing: 0.1em; display: block; width: 100%;
+      margin-top: 10px; text-align: center; transition: background 0.1s;
+    }
+    .pixel-btn:hover { background: rgba(232,197,71,0.1); }
+
+    .score-box {
+      background: var(--panel); border: 2px solid var(--border);
+      padding: 12px; margin-bottom: 10px; text-align: center;
+    }
+    .score-label { font-size: 0.35rem; color: var(--dim); margin-bottom: 6px; letter-spacing: 0.12em; }
+    .score-value { font-size: 1.1rem; color: var(--gold); }
+
+    .leaderboard { background: var(--panel); border: 2px solid var(--border); padding: 12px; }
+    .lb-title { font-size: 0.38rem; color: var(--gold); margin-bottom: 10px; text-align: center; letter-spacing: 0.12em; }
+    .lb-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.38rem; padding: 5px 0; border-bottom: 1px solid var(--border); }
+    .lb-row:last-child { border-bottom: none; }
+    .lb-rank { color: var(--dim); }
+    .lb-init { color: var(--text); letter-spacing: 0.1em; }
+    .lb-score { color: var(--gold); }
+
+    .game-hint { font-size: 0.35rem; color: var(--dim); text-align: center; margin-top: 10px; line-height: 2; letter-spacing: 0.08em; }
+    .sidebar { min-width: 155px; }
+
+    /* ── WORDLE ─────────────────────────────── */
+    .wordle-wrap { max-width: 380px; margin: 0 auto; }
+    .game-title  { text-align: center; font-size: 0.65rem; color: var(--gold); margin-bottom: 4px; letter-spacing: 0.1em; }
+    .game-day    { text-align: center; font-size: 0.35rem; color: var(--dim); margin-bottom: 18px; letter-spacing: 0.1em; }
+
+    .wordle-grid { display: grid; grid-template-rows: repeat(6,1fr); gap: 5px; margin-bottom: 18px; }
+    .wordle-row  { display: grid; grid-template-columns: repeat(5,1fr); gap: 5px; }
+    .wc {
+      aspect-ratio: 1; border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; color: var(--text); background: var(--panel);
+      transition: background 0.25s, border-color 0.25s;
+    }
+    .wc.filled  { border-color: #444; }
+    .wc.correct { background: #1e5c1e; border-color: var(--green); color: #fff; }
+    .wc.present { background: #5c4200; border-color: #ffc107; color: #fff; }
+    .wc.absent  { background: #1a1a1a; border-color: #333; color: #555; }
+    .wc.cur     { border-color: var(--gold); }
+
+    .wordle-kb  { display: flex; flex-direction: column; gap: 5px; align-items: center; }
+    .kb-row     { display: flex; gap: 4px; }
+    .key {
+      font-family: var(--px); font-size: 0.38rem; padding: 10px 6px;
+      background: var(--panel); border: 1px solid #2a2a2a;
+      color: var(--text); cursor: pointer; min-width: 26px; text-align: center;
+      transition: background 0.15s;
+    }
+    .key:hover   { background: #1a1a1a; }
+    .key.correct { background: #1e5c1e; border-color: var(--green); }
+    .key.present { background: #5c4200; border-color: #ffc107; }
+    .key.absent  { background: #151515; border-color: #222; color: #444; }
+    .key.wide    { min-width: 46px; font-size: 0.3rem; }
+
+    .wordle-msg { text-align: center; font-size: 0.4rem; color: var(--gold); margin-top: 14px; min-height: 18px; letter-spacing: 0.1em; }
+
+    /* ── SNAKE ─────────────────────────────── */
+    .game-row { display: flex; gap: 24px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+    #snakeCanvas { border: 2px solid var(--gold); image-rendering: pixelated; display: block; }
+
+    /* ── JUMP ───────────────────────────────── */
+    #jumpCanvas { border: 2px solid var(--gold); image-rendering: pixelated; display: block; max-width: 100%; }
+
+    /* ── COLOR GRID ─────────────────────────── */
+    .color-wrap   { max-width: 340px; margin: 0 auto; }
+    .color-rules  { text-align: center; font-size: 0.34rem; color: var(--dim); margin-bottom: 14px; line-height: 2.2; letter-spacing: 0.06em; }
+    .color-moves  { text-align: center; font-size: 0.42rem; color: var(--dim); margin-bottom: 12px; }
+    .color-grid   { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; margin-bottom: 14px; }
+    .cc {
+      aspect-ratio: 1; border: 3px solid transparent; cursor: pointer;
+      transition: transform 0.1s, border-color 0.15s; position: relative;
+    }
+    .cc.locked    { cursor: default; }
+    .cc.locked::after { content: '●'; position: absolute; bottom: 3px; right: 5px; font-size: 0.5rem; color: rgba(0,0,0,0.4); font-family: sans-serif; }
+    .cc.sel       { border-color: #fff !important; transform: scale(1.08); }
+    .cc.err       { border-color: #e74c3c !important; }
+    .cc.empty     { background: #181818 !important; border-color: #2a2a2a !important; }
+
+    .palette      { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
+    .swatch {
+      width: 38px; height: 38px; cursor: pointer;
+      border: 3px solid transparent; transition: border-color 0.15s, transform 0.1s;
+    }
+    .swatch:hover { transform: scale(1.1); }
+    .swatch.sel   { border-color: #fff; }
+    .eraser { width: 38px; height: 38px; background: #181818; border: 2px solid #333; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; transition: border-color 0.15s; }
+    .eraser:hover, .eraser.sel { border-color: #fff; }
+
+    .color-msg    { text-align: center; font-size: 0.4rem; color: var(--gold); min-height: 18px; letter-spacing: 0.1em; }
+
+    /* ── MODAL ──────────────────────────────── */
+    .modal {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.88); z-index: 500;
+      align-items: center; justify-content: center;
+    }
+    .modal.open { display: flex; }
+    .modal-box  {
+      background: var(--panel); border: 2px solid var(--gold);
+      padding: 32px 24px; text-align: center; max-width: 280px; width: 90%;
+    }
+    .modal-title { font-size: 0.55rem; color: var(--gold); margin-bottom: 12px; letter-spacing: 0.1em; }
+    .modal-score { font-size: 1.1rem; color: var(--text); margin-bottom: 14px; }
+    .modal-label { font-size: 0.35rem; color: var(--dim); margin-bottom: 8px; letter-spacing: 0.1em; }
+    .init-input {
+      font-family: var(--px); font-size: 1rem; background: var(--bg);
+      border: 2px solid var(--gold); color: var(--gold); text-align: center;
+      width: 90px; padding: 8px; text-transform: uppercase; letter-spacing: 0.3em;
+      margin-bottom: 14px; display: block; margin-left: auto; margin-right: auto;
+    }
+
+    @media (max-width: 620px) {
+      .game-row { flex-direction: column; align-items: center; }
+      .sidebar  { width: 100%; max-width: 320px; display: flex; gap: 10px; }
+      .sidebar .score-box, .sidebar .leaderboard { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>★ FLOOKES ARCADE ★</h1>
+  <p>insert coin to continue</p>
+  <a href="/" class="back-link">← EXIT</a>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchGame('wordle',this)">WORDLE</button>
+  <button class="tab"        onclick="switchGame('snake',this)">SNAKE</button>
+  <button class="tab"        onclick="switchGame('jump',this)">TRACK JUMP</button>
+  <button class="tab"        onclick="switchGame('color',this)">COLOR GRID</button>
+</div>
+
+<!-- WORDLE -->
+<div class="game-panel active" id="panel-wordle">
+  <div class="wordle-wrap">
+    <div class="game-title">DAILY WORD</div>
+    <div class="game-day"  id="wDay"></div>
+    <div class="wordle-grid" id="wGrid"></div>
+    <div class="wordle-kb"   id="wKeys"></div>
+    <div class="wordle-msg"  id="wMsg"></div>
+  </div>
+</div>
+
+<!-- SNAKE -->
+<div class="game-panel" id="panel-snake">
+  <div class="game-row">
+    <canvas id="snakeCanvas" width="320" height="320"></canvas>
+    <div class="sidebar">
+      <div class="score-box"><div class="score-label">SCORE</div><div class="score-value" id="snakeScore">0</div></div>
+      <div class="leaderboard">
+        <div class="lb-title">★ TOP 3 ★</div>
+        <div id="snakeLB"><div style="font-size:0.35rem;color:var(--dim);text-align:center">loading...</div></div>
+      </div>
+      <div class="game-hint">ARROWS / WASD TO MOVE<br>SPACE TO START / PAUSE<br>TAP CANVAS ON MOBILE</div>
+    </div>
+  </div>
+</div>
+
+<!-- JUMP -->
+<div class="game-panel" id="panel-jump">
+  <div class="game-row">
+    <canvas id="jumpCanvas" width="580" height="160"></canvas>
+    <div class="sidebar">
+      <div class="score-box"><div class="score-label">SCORE</div><div class="score-value" id="jumpScore">0</div></div>
+      <div class="leaderboard">
+        <div class="lb-title">★ TOP 3 ★</div>
+        <div id="jumpLB"><div style="font-size:0.35rem;color:var(--dim);text-align:center">loading...</div></div>
+      </div>
+      <div class="game-hint">SPACE / ↑ TO JUMP<br>CLEAR HURDLES + HIGH BARS<br>TAP CANVAS ON MOBILE</div>
+    </div>
+  </div>
+</div>
+
+<!-- COLOR GRID -->
+<div class="game-panel" id="panel-color">
+  <div class="color-wrap">
+    <div class="game-title">COLOR GRID</div>
+    <div class="game-day"  id="cDay"></div>
+    <div class="color-rules">FILL EVERY ROW &amp; COLUMN<br>WITH ALL 4 COLORS EXACTLY ONCE<br>CLICK A COLOR THEN CLICK A CELL</div>
+    <div class="color-moves" id="cMoves">MOVES: 0</div>
+    <div class="color-grid"  id="cGrid"></div>
+    <div class="palette"     id="cPal"></div>
+    <div class="color-msg"   id="cMsg"></div>
+  </div>
+</div>
+
+<!-- INITIALS MODAL -->
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <div class="modal-title">★ NEW HIGH SCORE ★</div>
+    <div class="modal-score" id="mScore"></div>
+    <div class="modal-label">ENTER INITIALS</div>
+    <input class="init-input" id="mInput" maxlength="3" placeholder="AAA" autocomplete="off">
+    <button class="pixel-btn" onclick="submitScore()">SUBMIT ↵</button>
+  </div>
+</div>
+
+<script>
+// ── SUPABASE ──────────────────────────────────
+const SUPABASE_URL = 'https://eyifiryyidwjcdigumfj.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_lJCtCE_D6-N5JfRMV22bsQ_sn4Emxwr';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── ROUTING ───────────────────────────────────
+let curGame = 'wordle';
+function switchGame(id, btn) {
+  document.querySelectorAll('.game-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  btn.classList.add('active');
+  curGame = id;
+  if (id === 'snake') { snakeInit(); loadLB('snake'); }
+  if (id === 'jump')  { jumpInit();  loadLB('jump'); }
+  if (id === 'color') initColor();
+}
+
+// ── DATE HELPERS ──────────────────────────────
+function dayNum()  { return Math.floor(Date.now() / 86400000); }
+function todayStr(){ return new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+function seededRng(seed) {
+  let s = seed >>> 0;
+  return () => { s = Math.imul(1664525, s) + 1013904223 >>> 0; return s / 0x100000000; };
+}
+
+// ══════════════════════════════════════════════
+// WORDLE
+// ══════════════════════════════════════════════
+const WORDS = ['about','above','abuse','actor','acute','admit','adopt','adult','after','again','agent','agree','ahead','alarm','album','alert','alien','alike','alive','alley','allow','alone','along','alpha','altar','alter','angel','anger','angle','angry','apart','apple','apply','apron','arena','argue','array','arrow','aside','atlas','audio','avoid','award','aware','awful','badge','basic','basin','batch','beach','began','begin','being','below','bench','black','blade','blame','blank','blast','blaze','bleed','blend','bless','blind','block','blood','bloom','blown','blues','blunt','board','boost','booth','bound','boxer','brain','brand','brave','bread','break','breed','brick','bride','brief','bring','broad','broke','brook','brown','build','built','burst','buyer','cabin','candy','cargo','carry','cause','chain','chair','chaos','charm','chase','cheap','cheek','chess','chest','chief','child','choir','chord','claim','clash','class','clean','clear','clerk','click','cliff','climb','cling','clock','clone','close','cloud','clown','coach','coast','comet','comic','coral','count','court','cover','craft','crane','crash','crazy','cream','creek','crime','cross','crowd','crown','crumb','crush','crust','curve','cycle','dance','debut','delay','dense','depot','depth','dirty','disco','dodge','doubt','dough','draft','drain','drama','drank','drawn','dream','dress','drink','drive','drone','drove','drunk','dryer','eager','eagle','early','earth','eight','elite','ember','empty','enemy','enjoy','enter','envoy','essay','evade','event','every','exact','exile','extra','fable','faith','false','fancy','fatal','fault','feast','fence','ferry','fever','field','fifth','fifty','fight','final','first','fixed','fizzy','flame','flash','flask','flesh','flock','flood','floor','flora','flown','flute','flyer','focus','force','forge','forth','forum','found','frame','frank','fraud','fresh','front','frost','froze','fully','funny','gauge','giant','given','glare','glass','gleam','glide','gloom','glove','going','grace','grade','grain','grand','grant','grasp','grass','great','greed','green','greet','grief','grill','grind','groan','groom','grove','grown','guard','guest','guide','guild','guilt','guise','gusto','habit','happy','harsh','haven','heart','heavy','hedge','hence','hippo','hoist','holly','honor','horse','hotel','house','human','humid','humor','hurry','ideal','image','imply','inner','input','irony','ivory','judge','juice','jumbo','kayak','knife','knock','known','label','labor','lance','large','later','laugh','layer','learn','lease','leave','legal','lemon','level','light','liner','local','lodge','logic','loose','lucky','lunar','magic','major','manor','maple','march','match','mayor','media','mercy','merit','metal','might','minor','mixed','model','money','moral','moved','movie','music','naive','night','noble','north','noted','novel','occur','ocean','offer','olive','order','outer','paint','panic','paper','party','patch','pause','peace','penny','petty','phase','phone','pilot','pitch','pixel','pizza','place','plain','plane','plant','plaza','plumb','plume','polar','power','press','price','pride','prime','prize','probe','prone','proof','prose','prove','proxy','pulse','punch','pupil','quest','quick','quiet','quota','quote','radar','radio','rainy','raise','range','rapid','ratio','reach','realm','rebel','relay','renew','repay','rider','ridge','right','rigid','risky','rival','river','robot','rouge','rough','round','route','royal','rugby','ruler','rusty','saint','sandy','sauce','scale','scare','scene','score','scout','sense','serve','share','shark','sharp','shelf','shell','shift','shiny','shock','shore','short','shout','sight','since','sixth','sixty','skill','slash','slice','slide','slope','smart','smell','smile','smoke','snake','solar','solid','solve','sonic','sorry','south','space','spare','spark','speak','spear','spend','spine','spite','split','spoke','spoon','sport','spray','squad','stack','stage','stain','stale','stand','stark','start','state','steak','steam','steel','steep','steer','stern','stick','still','stock','stone','stood','storm','story','stove','strap','straw','stray','strip','stuck','study','stuff','style','sugar','suite','sunny','super','surge','sweet','swept','swift','sword','table','taunt','tense','tenth','their','theme','there','these','thick','thing','third','thorn','those','three','threw','throw','tiger','tight','tired','toast','today','token','tooth','total','touch','tough','trace','track','trade','trail','train','trait','trend','trial','tribe','trick','tried','troop','trout','truck','truly','tumor','twice','twist','unfit','union','unity','until','upper','upset','urban','usual','utter','vague','valid','value','vault','video','viral','virus','visit','vista','vital','vivid','vocal','voice','voter','wagon','waist','watch','water','weary','weave','wedge','weigh','weird','whole','whose','wider','witty','women','world','worry','worse','worst','worth','wound','wrath','wrist','write','wrote','yield','young','youth','zones'];
+
+let wWord='', wGuesses=[], wCurrent='', wOver=false, wKeys={};
+
+function initWordle() {
+  const d = dayNum();
+  wWord = WORDS[d % WORDS.length];
+  document.getElementById('wDay').textContent = `PUZZLE #${(d % WORDS.length)+1} · ${todayStr()}`;
+  const saved = localStorage.getItem('wordle_' + d);
+  if (saved) { const s=JSON.parse(saved); wGuesses=s.g; wOver=s.o; wKeys=s.k||{}; }
+  else { wGuesses=[]; wOver=false; wKeys={}; }
+  renderWGrid(); renderWKeys();
+  if (wOver) {
+    const won = wGuesses[wGuesses.length-1]===wWord;
+    document.getElementById('wMsg').textContent = won ? '🎉 NICE! BACK TOMORROW' : `WORD: ${wWord.toUpperCase()}`;
+  }
+}
+
+function renderWGrid() {
+  const g = document.getElementById('wGrid'); g.innerHTML='';
+  for (let r=0;r<6;r++) {
+    const row = document.createElement('div'); row.className='wordle-row';
+    for (let c=0;c<5;c++) {
+      const cell = document.createElement('div'); cell.className='wc';
+      if (r < wGuesses.length) {
+        cell.textContent = wGuesses[r][c].toUpperCase();
+        cell.classList.add(letterState(wGuesses[r],c,wWord));
+      } else if (r===wGuesses.length && !wOver) {
+        if (c < wCurrent.length) { cell.textContent=wCurrent[c].toUpperCase(); cell.classList.add('filled'); }
+        if (c===wCurrent.length) cell.classList.add('cur');
+      }
+      row.appendChild(cell);
+    }
+    g.appendChild(row);
+  }
+}
+
+function letterState(guess, pos, word) {
+  if (guess[pos]===word[pos]) return 'correct';
+  // check if letter appears in word accounting for duplicates
+  const wordArr = word.split('');
+  const guessArr = guess.split('');
+  // mark greens first
+  guessArr.forEach((l,i) => { if (l===wordArr[i]) { wordArr[i]=null; guessArr[i]=null; } });
+  if (guessArr[pos]===null) return 'correct';
+  const remaining = wordArr.filter(l=>l!==null);
+  if (remaining.includes(guess[pos])) return 'present';
+  return 'absent';
+}
+
+function renderWKeys() {
+  const rows=[['q','w','e','r','t','y','u','i','o','p'],['a','s','d','f','g','h','j','k','l'],['ENTER','z','x','c','v','b','n','m','⌫']];
+  const kb=document.getElementById('wKeys'); kb.innerHTML='';
+  rows.forEach(row => {
+    const r=document.createElement('div'); r.className='kb-row';
+    row.forEach(k => {
+      const b=document.createElement('button'); b.className='key'+(k.length>1?' wide':'');
+      b.textContent=k; if(wKeys[k.toLowerCase()]) b.classList.add(wKeys[k.toLowerCase()]);
+      b.onclick=()=>wInput(k); r.appendChild(b);
+    });
+    kb.appendChild(r);
+  });
+}
+
+function wInput(key) {
+  if (wOver) return;
+  const k=key.toLowerCase();
+  if (k==='enter') {
+    if (wCurrent.length!==5) { wFlash('NOT ENOUGH LETTERS'); return; }
+    if (!WORDS.includes(wCurrent)) { wFlash('NOT IN WORD LIST'); return; }
+    wGuesses.push(wCurrent);
+    // update key states
+    wCurrent.split('').forEach((l,i) => {
+      const st=letterState(wCurrent,i,wWord);
+      const pv=wKeys[l];
+      if (!pv||(pv==='absent'&&st!=='absent')||(pv==='present'&&st==='correct')) wKeys[l]=st;
+    });
+    const won=wCurrent===wWord;
+    wCurrent='';
+    if (won||wGuesses.length===6) {
+      wOver=true;
+      const msgs=['GENIUS!','MAGNIFICENT!','IMPRESSIVE!','SPLENDID!','GREAT!','PHEW!'];
+      document.getElementById('wMsg').textContent = won ? msgs[wGuesses.length-1]+' 🎉' : `WORD: ${wWord.toUpperCase()}`;
+    }
+    localStorage.setItem('wordle_'+dayNum(), JSON.stringify({g:wGuesses,o:wOver,k:wKeys}));
+    renderWGrid(); renderWKeys();
+  } else if (k==='⌫'||k==='backspace') {
+    wCurrent=wCurrent.slice(0,-1); renderWGrid();
+  } else if (/^[a-z]$/.test(k) && wCurrent.length<5) {
+    wCurrent+=k; renderWGrid();
+  }
+}
+
+function wFlash(msg) {
+  const el=document.getElementById('wMsg'); el.textContent=msg;
+  setTimeout(()=>{ if(!wOver) el.textContent=''; },1500);
+}
+
+// ══════════════════════════════════════════════
+// LEADERBOARD (shared)
+// ══════════════════════════════════════════════
+let pendingGame='', pendingScore=0;
+
+async function loadLB(game) {
+  const el=document.getElementById(game+'LB');
+  const {data}=await db.from('scores').select('*').eq('game',game).order('score',{ascending:false}).limit(3);
+  if (!data?.length) { el.innerHTML='<div style="font-size:0.35rem;color:var(--dim);text-align:center;padding:4px">NO SCORES YET</div>'; return; }
+  el.innerHTML=data.map((s,i)=>`<div class="lb-row"><span class="lb-rank">${['#1','#2','#3'][i]}</span><span class="lb-init">${s.initials}</span><span class="lb-score">${s.score}</span></div>`).join('');
+}
+
+async function checkScore(game, score) {
+  const {data}=await db.from('scores').select('*').eq('game',game).order('score',{ascending:false}).limit(3);
+  const lowest=data?.length<3?-1:data[data.length-1].score;
+  if (score>lowest) {
+    pendingGame=game; pendingScore=score;
+    document.getElementById('mScore').textContent=score;
+    document.getElementById('mInput').value='';
+    document.getElementById('modal').classList.add('open');
+    setTimeout(()=>document.getElementById('mInput').focus(),100);
+  }
+}
+
+async function submitScore() {
+  const init=document.getElementById('mInput').value.toUpperCase().trim().slice(0,3);
+  if (!init) return;
+  document.getElementById('modal').classList.remove('open');
+  const {data}=await db.from('scores').select('*').eq('game',pendingGame).order('score',{ascending:true});
+  if (data?.length>=3) await db.from('scores').delete().eq('id',data[0].id);
+  await db.from('scores').insert({game:pendingGame,initials:init,score:pendingScore});
+  loadLB(pendingGame);
+}
+
+document.getElementById('mInput').addEventListener('keydown', e=>{ if(e.key==='Enter') submitScore(); });
+
+// ══════════════════════════════════════════════
+// SNAKE
+// ══════════════════════════════════════════════
+const SC=document.getElementById('snakeCanvas');
+const SCX=SC.getContext('2d');
+const CELL=16, COLS=20, ROWS=20;
+let snake,sDir,sNextDir,sFood,sScore,sRunning,sOver,sPaused,sInterval;
+
+function snakeInit() {
+  clearInterval(sInterval);
+  snake=[{x:10,y:10},{x:9,y:10},{x:8,y:10}];
+  sDir={x:1,y:0}; sNextDir={x:1,y:0};
+  sScore=0; sRunning=false; sOver=false; sPaused=false;
+  document.getElementById('snakeScore').textContent='0';
+  spawnSFood(); drawSnake();
+  // overlay
+  SCX.fillStyle='rgba(0,0,0,0.7)'; SCX.fillRect(0,110,320,60);
+  SCX.fillStyle='#e8c547'; SCX.font='8px "Press Start 2P"'; SCX.textAlign='center';
+  SCX.fillText('PRESS SPACE TO START',160,140);
+}
+
+function spawnSFood() {
+  do { sFood={x:Math.floor(Math.random()*COLS),y:Math.floor(Math.random()*ROWS)}; }
+  while (snake.some(s=>s.x===sFood.x&&s.y===sFood.y));
+}
+
+function drawSnake() {
+  SCX.fillStyle='#080808'; SCX.fillRect(0,0,320,320);
+  // grid dots
+  SCX.fillStyle='#111';
+  for(let x=0;x<COLS;x++) for(let y=0;y<ROWS;y++) SCX.fillRect(x*CELL+7,y*CELL+7,2,2);
+  // food
+  SCX.fillStyle='#e74c3c'; SCX.fillRect(sFood.x*CELL+2,sFood.y*CELL+2,CELL-4,CELL-4);
+  SCX.fillStyle='#c0392b'; SCX.fillRect(sFood.x*CELL+5,sFood.y*CELL+5,CELL-10,CELL-10);
+  // snake
+  snake.forEach((seg,i)=>{
+    SCX.fillStyle=i===0?'#4caf50':'#2d5c2d';
+    SCX.fillRect(seg.x*CELL+1,seg.y*CELL+1,CELL-2,CELL-2);
+    if(i===0){
+      SCX.fillStyle='#080808';
+      const ex=sDir.x>0?8:sDir.x<0?2:5, ey=sDir.y>0?8:sDir.y<0?2:5;
+      SCX.fillRect(seg.x*CELL+ex-2,seg.y*CELL+ey-2,3,3);
+      SCX.fillRect(seg.x*CELL+ex+3,seg.y*CELL+ey-2,3,3);
+    }
+  });
+}
+
+function snakeTick() {
+  sDir=sNextDir;
+  const head={x:snake[0].x+sDir.x,y:snake[0].y+sDir.y};
+  if(head.x<0||head.x>=COLS||head.y<0||head.y>=ROWS){snakeDie();return;}
+  if(snake.some(s=>s.x===head.x&&s.y===head.y)){snakeDie();return;}
+  snake.unshift(head);
+  if(head.x===sFood.x&&head.y===sFood.y){
+    sScore+=10; document.getElementById('snakeScore').textContent=sScore;
+    spawnSFood();
+    if(sScore%60===0){ clearInterval(sInterval); sInterval=setInterval(snakeTick,Math.max(70,150-Math.floor(sScore/60)*8)); }
+  } else { snake.pop(); }
+  drawSnake();
+}
+
+async function snakeDie() {
+  clearInterval(sInterval); sRunning=false; sOver=true;
+  SCX.fillStyle='rgba(0,0,0,0.78)'; SCX.fillRect(0,100,320,65);
+  SCX.fillStyle='#e74c3c'; SCX.font='10px "Press Start 2P"'; SCX.textAlign='center';
+  SCX.fillText('GAME OVER',160,122);
+  SCX.fillStyle='#e8c547'; SCX.font='7px "Press Start 2P"';
+  SCX.fillText('SCORE: '+sScore,160,141);
+  SCX.fillStyle='#555'; SCX.font='5px "Press Start 2P"';
+  SCX.fillText('SPACE TO PLAY AGAIN',160,158);
+  await checkScore('snake',sScore);
+}
+
+SC.addEventListener('click',()=>{
+  if(curGame!=='snake') return;
+  if(sOver){snakeInit();return;}
+  if(!sRunning){sRunning=true;sInterval=setInterval(snakeTick,150);}
+  else if(!sPaused&&!isJumping){velY=-13;isJumping=true;}
+});
+
+// swipe for mobile snake
+let touchStartX=0,touchStartY=0;
+SC.addEventListener('touchstart',e=>{touchStartX=e.touches[0].clientX;touchStartY=e.touches[0].clientY;e.preventDefault();},{passive:false});
+SC.addEventListener('touchend',e=>{
+  if(curGame!=='snake') return;
+  const dx=e.changedTouches[0].clientX-touchStartX, dy=e.changedTouches[0].clientY-touchStartY;
+  if(Math.abs(dx)<10&&Math.abs(dy)<10){
+    if(sOver){snakeInit();return;}
+    if(!sRunning){sRunning=true;sInterval=setInterval(snakeTick,150);}
+    return;
+  }
+  if(Math.abs(dx)>Math.abs(dy)){
+    const d=dx>0?{x:1,y:0}:{x:-1,y:0};
+    if(d.x!==-sDir.x) sNextDir=d;
+  } else {
+    const d=dy>0?{x:0,y:1}:{x:0,y:-1};
+    if(d.y!==-sDir.y) sNextDir=d;
+  }
+  e.preventDefault();
+},{passive:false});
+
+// ══════════════════════════════════════════════
+// TRACK JUMP
+// ══════════════════════════════════════════════
+const JC=document.getElementById('jumpCanvas');
+const JCX=JC.getContext('2d');
+const JW=580, JH=160, GNDH=118; // ground Y
+let jRunning=false,jOver=false,jScore=0,jSpeed=3.5;
+let jObstacles=[],jTimer=0,jFrames=0;
+let runY=GNDH,velY=0,isJumping=false,legPhase=0;
+let jRAF;
+
+function jumpInit() {
+  cancelAnimationFrame(jRAF);
+  jRunning=false;jOver=false;jScore=0;jSpeed=3.5;
+  jObstacles=[];jTimer=0;jFrames=0;
+  runY=GNDH;velY=0;isJumping=false;legPhase=0;
+  document.getElementById('jumpScore').textContent='0';
+  drawJump();
+  // start overlay
+  JCX.fillStyle='rgba(0,0,0,0.72)'; JCX.fillRect(0,0,JW,JH);
+  JCX.fillStyle='#e8c547'; JCX.font='11px "Press Start 2P"'; JCX.textAlign='center';
+  JCX.fillText('TRACK & FIELD',JW/2,52);
+  JCX.fillStyle='#aaa'; JCX.font='6px "Press Start 2P"';
+  JCX.fillText('SPACE / TAP TO START & JUMP',JW/2,76);
+  JCX.fillStyle='#555'; JCX.font='5px "Press Start 2P"';
+  JCX.fillText('CLEAR HURDLES AND HIGH JUMP BARS',JW/2,96);
+}
+
+function drawJump() {
+  // sky
+  JCX.fillStyle='#080808'; JCX.fillRect(0,0,JW,JH);
+  // track surface
+  JCX.fillStyle='#6b3a1f'; JCX.fillRect(0,GNDH+18,JW,JH-GNDH-18);
+  JCX.fillStyle='#8b4a24'; JCX.fillRect(0,GNDH+18,JW,6);
+  // lane lines (scrolling dashes)
+  JCX.fillStyle='rgba(255,255,255,0.15)';
+  const off=(jFrames*jSpeed)%80;
+  for(let x=-off;x<JW;x+=80) JCX.fillRect(x,GNDH+20,40,3);
+  // obstacles
+  jObstacles.forEach(o=>o.type==='hurdle'?drawHurdle(o.x,o.h):drawHighBar(o.x,o.h));
+  // runner
+  drawRunner(75,runY);
+}
+
+function drawHurdle(x,h) {
+  const gy=GNDH+18;
+  // posts
+  JCX.fillStyle='#e8c547';
+  JCX.fillRect(x,gy-h,4,h);
+  JCX.fillRect(x+30,gy-h,4,h);
+  // bar
+  JCX.fillStyle='#e74c3c';
+  JCX.fillRect(x-2,gy-h-4,36,4);
+  // feet
+  JCX.fillStyle='#888';
+  JCX.fillRect(x-6,gy-5,16,5);
+  JCX.fillRect(x+24,gy-5,16,5);
+}
+
+function drawHighBar(x,h) {
+  const gy=GNDH+18;
+  // standard posts (taller)
+  JCX.fillStyle='#aaa';
+  JCX.fillRect(x,gy-h,4,h);
+  JCX.fillRect(x+32,gy-h,4,h);
+  // the bar (white)
+  JCX.fillStyle='#ffffff';
+  JCX.fillRect(x-3,gy-h-3,40,3);
+  // base mounts
+  JCX.fillStyle='#555';
+  JCX.fillRect(x-8,gy-10,20,10);
+  JCX.fillRect(x+24,gy-10,20,10);
+}
+
+function drawRunner(x,y) {
+  if(jRunning) legPhase+=0.28;
+  const l1=isJumping?-6:Math.sin(legPhase)*7;
+  const l2=isJumping?6:Math.sin(legPhase+Math.PI)*7;
+  const a1=isJumping?-10:Math.sin(legPhase+Math.PI)*6;
+  const a2=isJumping?10:Math.sin(legPhase)*6;
+  // body
+  JCX.fillStyle='#e8c547'; JCX.fillRect(x-4,y-22,8,14);
+  // head
+  JCX.fillStyle='#f4a460'; JCX.fillRect(x-5,y-31,10,9);
+  JCX.fillStyle='#2c1a0e'; JCX.fillRect(x-1,y-29,3,3); // eye
+  // torso detail
+  JCX.fillStyle='#c8a020'; JCX.fillRect(x-4,y-20,8,2);
+  // legs
+  JCX.fillStyle='#e8c547';
+  JCX.fillRect(x-4,y-8,3,8+l1);
+  JCX.fillRect(x+1,y-8,3,8+l2);
+  // feet/shoes
+  JCX.fillStyle='#fff';
+  JCX.fillRect(x-7,y+l1,7,3);
+  JCX.fillRect(x+1,y+l2,7,3);
+  // arms
+  JCX.fillStyle='#e8c547';
+  JCX.fillRect(x-10,y-19+a1,6,3);
+  JCX.fillRect(x+4, y-19+a2,6,3);
+}
+
+function jumpLoop() {
+  if(!jRunning) return;
+  jFrames++;
+  // physics
+  velY+=0.55; runY+=velY;
+  if(runY>=GNDH){runY=GNDH;velY=0;isJumping=false;}
+  // spawn
+  jTimer--;
+  if(jTimer<=0){
+    const types=['hurdle','hurdle','highbar','hurdle'];
+    const type=types[Math.floor(Math.random()*types.length)];
+    const h=type==='hurdle'?28+Math.random()*10:62+Math.random()*20;
+    jObstacles.push({x:JW+20,h,type});
+    jTimer=90+Math.floor(Math.random()*50)-Math.floor(jScore/300)*3;
+    jTimer=Math.max(50,jTimer);
+  }
+  jObstacles.forEach(o=>o.x-=jSpeed);
+  jObstacles=jObstacles.filter(o=>o.x>-60);
+  jScore++;
+  if(jScore%300===0) jSpeed=Math.min(9,jSpeed+0.4);
+  document.getElementById('jumpScore').textContent=jScore;
+  // collision (runner hitbox: x:68-82, y:runY-30 to runY)
+  const rx1=68,rx2=82,ry1=runY-30,ry2=runY+2;
+  for(const o of jObstacles){
+    const ow=36, ox1=o.x, ox2=o.x+ow, oy1=(GNDH+18)-o.h-5, oy2=GNDH+18;
+    if(rx2>ox1+3&&rx1<ox2-3&&ry2>oy1&&ry1<oy2){ jumpDie(); return; }
+  }
+  drawJump();
+  jRAF=requestAnimationFrame(jumpLoop);
+}
+
+async function jumpDie() {
+  jRunning=false; jOver=true;
+  JCX.fillStyle='rgba(0,0,0,0.78)'; JCX.fillRect(0,40,JW,70);
+  JCX.fillStyle='#e74c3c'; JCX.font='11px "Press Start 2P"'; JCX.textAlign='center';
+  JCX.fillText('GAME OVER',JW/2,68);
+  JCX.fillStyle='#e8c547'; JCX.font='7px "Press Start 2P"';
+  JCX.fillText('SCORE: '+jScore,JW/2,90);
+  JCX.fillStyle='#555'; JCX.font='5px "Press Start 2P"';
+  JCX.fillText('SPACE / TAP TO PLAY AGAIN',JW/2,110);
+  await checkScore('jump',jScore);
+}
+
+function jumpAction() {
+  if(jOver){jumpInit();return;}
+  if(!jRunning){ jRunning=true; jRAF=requestAnimationFrame(jumpLoop); }
+  if(!isJumping&&runY>=GNDH){ velY=-12; isJumping=true; }
+}
+
+JC.addEventListener('click',()=>{ if(curGame==='jump') jumpAction(); });
+JC.addEventListener('touchstart',e=>{ if(curGame==='jump'){jumpAction();e.preventDefault();}},{passive:false});
+
+// ══════════════════════════════════════════════
+// COLOR GRID
+// ══════════════════════════════════════════════
+const COLS4=['#e74c3c','#3b82f6','#22c55e','#f59e0b']; // red,blue,green,amber
+const BASE4=[[0,1,2,3],[1,0,3,2],[2,3,0,1],[3,2,1,0]]; // valid Latin square base
+let cGrid=[],cLocked=[],cSel=null,cMoves=0,cSolved=false;
+
+function generatePuzzle(seed){
+  const rng=seededRng(seed);
+  // permute colors
+  const cp=[0,1,2,3]; for(let i=3;i>0;i--){const j=Math.floor(rng()*(i+1));[cp[i],cp[j]]=[cp[j],cp[i]];}
+  // build grid
+  let grid=BASE4.map(r=>r.map(c=>cp[c]));
+  // row-pair swap
+  if(rng()>0.5){[grid[0],grid[1]]=[grid[1],grid[0]];}
+  if(rng()>0.5){[grid[2],grid[3]]=[grid[3],grid[2]];}
+  // col-pair swap
+  if(rng()>0.5){grid=grid.map(r=>{[r[0],r[1]]=[r[1],r[0]];return r;});}
+  if(rng()>0.5){grid=grid.map(r=>{[r[2],r[3]]=[r[3],r[2]];return r;});}
+  const solution=grid.map(r=>[...r]);
+  // pick givens (7 cells)
+  const pos=[];for(let r=0;r<4;r++)for(let c=0;c<4;c++)pos.push([r,c]);
+  for(let i=pos.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[pos[i],pos[j]]=[pos[j],pos[i]];}
+  const givens=pos.slice(0,7);
+  const locked=Array(4).fill(null).map(()=>Array(4).fill(false));
+  const puzzle=Array(4).fill(null).map(()=>Array(4).fill(-1));
+  givens.forEach(([r,c])=>{puzzle[r][c]=solution[r][c];locked[r][c]=true;});
+  return{puzzle,locked};
+}
+
+function initColor(){
+  const d=dayNum();
+  document.getElementById('cDay').textContent=`PUZZLE #${(d%365)+1} · ${todayStr()}`;
+  cMoves=0;cSolved=false;cSel=null;
+  document.getElementById('cMoves').textContent='MOVES: 0';
+  document.getElementById('cMsg').textContent='';
+  const saved=localStorage.getItem('color_'+d);
+  if(saved){const s=JSON.parse(saved);cGrid=s.g;cLocked=s.l;cMoves=s.m;cSolved=s.s;document.getElementById('cMoves').textContent='MOVES: '+cMoves;if(cSolved)document.getElementById('cMsg').textContent='🎉 SOLVED! BACK TOMORROW';}
+  else{const{puzzle,locked}=generatePuzzle(d);cGrid=puzzle;cLocked=locked;}
+  renderCGrid();renderCPal();
+}
+
+function renderCGrid(){
+  const g=document.getElementById('cGrid');g.innerHTML='';
+  for(let r=0;r<4;r++) for(let c=0;c<4;c++){
+    const cell=document.createElement('div');
+    cell.className='cc'+(cLocked[r][c]?' locked':'');
+    if(cGrid[r][c]>=0){
+      cell.style.background=COLS4[cGrid[r][c]];
+      cell.style.borderColor=hasConflict4(r,c)?'#e74c3c':COLS4[cGrid[r][c]];
+      if(hasConflict4(r,c)) cell.classList.add('err');
+    } else {
+      cell.classList.add('empty');
+    }
+    if(!cLocked[r][c]&&!cSolved) cell.onclick=()=>clickCell(r,c);
+    g.appendChild(cell);
+  }
+}
+
+function hasConflict4(r,c){
+  const v=cGrid[r][c]; if(v<0) return false;
+  for(let i=0;i<4;i++){if(i!==c&&cGrid[r][i]===v)return true;if(i!==r&&cGrid[i][c]===v)return true;}
+  return false;
+}
+
+function renderCPal(){
+  const p=document.getElementById('cPal');p.innerHTML='';
+  COLS4.forEach((col,i)=>{
+    const s=document.createElement('div'); s.className='swatch'+(cSel===i?' sel':'');
+    s.style.background=col; s.onclick=()=>{cSel=cSel===i?null:i;renderCPal();};
+    p.appendChild(s);
+  });
+  const er=document.createElement('div'); er.className='eraser'+(cSel===-1?' sel':'');
+  er.innerHTML='✕'; er.onclick=()=>{cSel=cSel===-1?null:-1;renderCPal();};
+  p.appendChild(er);
+}
+
+function clickCell(r,c){
+  if(cSel===null) return;
+  const prev=cGrid[r][c];
+  cGrid[r][c]=cSel===-1?-1:cSel;
+  if(cGrid[r][c]!==prev){ cMoves++; document.getElementById('cMoves').textContent='MOVES: '+cMoves; }
+  renderCGrid(); checkCSolved();
+  localStorage.setItem('color_'+dayNum(),JSON.stringify({g:cGrid,l:cLocked,m:cMoves,s:cSolved}));
+}
+
+function checkCSolved(){
+  for(let r=0;r<4;r++) for(let c=0;c<4;c++) if(cGrid[r][c]<0||hasConflict4(r,c)) return;
+  cSolved=true;
+  document.getElementById('cMsg').textContent='🎉 SOLVED IN '+cMoves+' MOVES!';
+  localStorage.setItem('color_'+dayNum(),JSON.stringify({g:cGrid,l:cLocked,m:cMoves,s:true}));
+}
+
+// ── GLOBAL KEY HANDLER ────────────────────────
+document.addEventListener('keydown',e=>{
+  if(curGame==='wordle'){
+    if(e.key==='Enter') wInput('enter');
+    else if(e.key==='Backspace') wInput('⌫');
+    else if(/^[a-zA-Z]$/.test(e.key)) wInput(e.key.toLowerCase());
+  }
+  if(curGame==='snake'){
+    const map={ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1},ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0},
+               w:{x:0,y:-1},s:{x:0,y:1},a:{x:-1,y:0},d:{x:1,y:0},
+               W:{x:0,y:-1},S:{x:0,y:1},A:{x:-1,y:0},D:{x:1,y:0}};
+    if(e.key===' '){
+      e.preventDefault();
+      if(sOver){snakeInit();return;}
+      if(!sRunning){sRunning=true;sInterval=setInterval(snakeTick,150);}
+      else if(sPaused){sPaused=false;sInterval=setInterval(snakeTick,150);}
+      else{sPaused=true;clearInterval(sInterval);}
+    }
+    if(map[e.key]){
+      e.preventDefault();
+      const d=map[e.key];
+      if(d.x!==-sDir.x||d.y!==-sDir.y) sNextDir=d;
+    }
+  }
+  if(curGame==='jump'){
+    if(e.key===' '||e.key==='ArrowUp'){e.preventDefault();jumpAction();}
+  }
+});
+
+// ── INIT ─────────────────────────────────────
+initWordle();
+loadLB('snake');
+loadLB('jump');
+</script>
+</body>
+</html>

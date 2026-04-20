@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jonathan Flookes — Video Editor · Storyteller · Filmmaker</title>
+
+  <!-- SEO -->
+  <meta name="description" content="Jonathan Flookes is an award-winning video editor and filmmaker based in the San Francisco Bay Area, specializing in commercials, branded content, and documentary storytelling.">
+  <meta name="keywords" content="video editor, film editor, commercial editor, branded content, San Francisco, Jonathan Flookes, storyteller, filmmaker">
+  <meta name="author" content="Jonathan Flookes">
+  <link rel="canonical" href="https://www.flookesitup.com">
+
+  <!-- Open Graph (looks good when shared on LinkedIn, iMessage, Slack etc) -->
+  <meta property="og:title" content="Jonathan Flookes — Editor · Storyteller · Filmmaker">
+  <meta property="og:description" content="20 years of commercials, branded content, and documentary work. Based in the SF Bay Area.">
+  <meta property="og:url" content="https://www.flookesitup.com">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://www.flookesitup.com/jonathan.jpg">
+
+  <!-- Favicon — inline SVG "F" in gold, no extra file needed -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='12' fill='%23080808'/><text y='78' x='12' font-size='82' font-family='Arial Black,sans-serif' font-weight='900' fill='%23e8c547'>F</text></svg>">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #080808;
+      --bg2:      #0f0f0f;
+      --bg3:      #141414;
+      --text:     #f0ece4;
+      --dim:      rgba(240,236,228,0.35);
+      --dimmer:   rgba(240,236,228,0.15);
+      --gold:     #e8c547;
+      --border:   rgba(240,236,228,0.08);
+      --nav-h:    56px;
+      --font-hero: 'Bebas Neue', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      cursor: default;
+    }
+
+    /* ── GRAIN OVERLAY ──────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.4;
+    }
+
+    /* ── NAV ────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: var(--nav-h); z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 40px;
+      background: rgba(8,8,8,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-monogram {
+      font-family: var(--font-hero);
+      font-size: 1.6rem; letter-spacing: 0.05em;
+      color: var(--text); cursor: pointer;
+      transition: color 0.2s; line-height: 1;
+    }
+    .nav-monogram:hover { color: var(--gold); }
+
+    .nav-links { display: flex; gap: 32px; list-style: none; }
+    .nav-links a {
+      font-size: 0.62rem; font-weight: 400; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--dim); text-decoration: none;
+      transition: color 0.2s; cursor: pointer; white-space: nowrap;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a.active { color: var(--gold); }
+
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; }
+    .hamburger span { display: block; width: 20px; height: 1px; background: var(--dim); transition: all 0.25s; }
+    .hamburger.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); background: var(--text); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); background: var(--text); }
+
+    .mobile-menu {
+      display: none; position: fixed; top: var(--nav-h); left: 0; right: 0;
+      background: rgba(8,8,8,0.97); padding: 8px 40px 28px; z-index: 99;
+      border-bottom: 1px solid var(--border);
+    }
+    .mobile-menu.open { display: block; }
+    .mobile-menu a {
+      display: block; font-size: 0.7rem; font-weight: 400; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--dim); text-decoration: none;
+      padding: 16px 0; border-bottom: 1px solid var(--border); cursor: pointer;
+      transition: color 0.2s;
+    }
+    .mobile-menu a:hover { color: var(--text); }
+    .mobile-menu a:last-child { border-bottom: none; }
+
+    /* ── PAGES ──────────────────────────────── */
+    main { padding-top: var(--nav-h); position: relative; z-index: 1; }
+    .page { display: none; }
+    .page.active { display: block; animation: pgIn 0.4s ease both; }
+    @keyframes pgIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── HOME HERO ──────────────────────────── */
+    .hero {
+      position: relative; overflow: hidden;
+      padding: 64px 40px 48px 40px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-end; gap: 40px;
+    }
+
+    .hero-name {
+      font-family: var(--font-hero);
+      font-size: clamp(7rem, 18vw, 18rem);
+      line-height: 0.85;
+      letter-spacing: -0.01em;
+      /* outlined stroke effect */
+      color: transparent;
+      -webkit-text-stroke: 1.5px rgba(240,236,228,0.2);
+      user-select: none;
+      flex-shrink: 0;
+      transition: -webkit-text-stroke 0.3s;
+    }
+    .hero-name:hover { -webkit-text-stroke-color: rgba(240,236,228,0.45); }
+
+    .hero-meta {
+      padding-bottom: 8px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+
+    .hero-role {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      transform: rotate(180deg);
+      font-size: 0.6rem; font-weight: 400; letter-spacing: 0.3em;
+      text-transform: uppercase; color: var(--dim);
+    }
+
+    .hero-line {
+      width: 1px; height: 60px;
+      background: linear-gradient(to bottom, var(--gold), transparent);
+      margin: 0 auto;
+    }
+
+    .hero-gold {
+      font-family: var(--font-hero);
+      font-size: clamp(1rem, 2.5vw, 1.8rem);
+      color: var(--gold); letter-spacing: 0.15em;
+    }
+
+    /* ── CATEGORY LABEL ─────────────────────── */
+    .cat-label {
+      padding: 32px 40px 20px;
+      display: flex; align-items: center; gap: 20px;
+    }
+    .cat-label h1 {
+      font-family: var(--font-hero);
+      font-size: 3.5rem; letter-spacing: 0.05em;
+      color: var(--text); line-height: 1;
+    }
+    .cat-label-line { flex: 1; height: 1px; background: var(--border); }
+
+    /* ── VIDEO GRID ─────────────────────────── */
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 25px; padding: 16px 16px 75px 16px;
+    }
+
+    /* ── VIDEO CARD ─────────────────────────── */
+    .video-card {
+      position: relative; overflow: hidden; cursor: pointer;
+      background: var(--bg2);
+    }
+
+    .video-thumb-wrap {
+      position: relative; width: 100%; padding-bottom: 56.25%;
+      background: var(--bg3); overflow: hidden;
+    }
+
+    .thumb-video {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      object-fit: cover; z-index: 1; pointer-events: none;
+      background: var(--bg3);
+      transition: transform 0.6s ease;
+    }
+
+    /* hover overlay — slides up from bottom */
+    .card-overlay {
+      position: absolute; inset: 0; z-index: 3;
+      background: linear-gradient(to top, rgba(8,8,8,0.92) 0%, rgba(8,8,8,0.3) 50%, transparent 100%);
+      display: flex; flex-direction: column; justify-content: flex-end;
+      padding: 20px 18px;
+      opacity: 0; transform: translateY(6px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .video-card:hover .card-overlay { opacity: 1; transform: translateY(0); }
+    .video-card:hover .thumb-video { transform: scale(1.04); }
+
+    .card-brand {
+      font-size: 0.58rem; font-weight: 500; letter-spacing: 0.25em;
+      text-transform: uppercase; color: var(--gold); margin-bottom: 4px;
+    }
+    .card-title {
+      font-size: 0.9rem; font-weight: 300; color: var(--text);
+      letter-spacing: 0.03em; line-height: 1.3;
+    }
+
+    /* play ring — always visible, subtle */
+    .card-play {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 44px; height: 44px; border-radius: 50%;
+      border: 1px solid rgba(240,236,228,0.2);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 4; transition: border-color 0.25s, background 0.25s, transform 0.25s;
+    }
+    .card-play svg { width: 12px; height: 12px; fill: rgba(240,236,228,0.3); margin-left: 2px; transition: fill 0.25s; }
+    .video-card:hover .card-play { border-color: var(--gold); background: rgba(232,197,71,0.15); transform: translate(-50%,-50%) scale(1.1); }
+    .video-card:hover .card-play svg { fill: var(--gold); }
+
+    .coming-soon-tag {
+      position: absolute; top: 12px; right: 12px; z-index: 4;
+      font-size: 0.52rem; letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--dimmer); border: 1px solid var(--border);
+      padding: 3px 8px; border-radius: 2px;
+    }
+
+    /* ── ABOUT ──────────────────────────────── */
+    .about-wrap { padding: 56px 40px; display: flex; justify-content: center; }
+    .about-grid { display: grid; grid-template-columns: 280px 1fr; gap: 80px; align-items: start; max-width: 860px; width: 100%; }
+
+    .about-img-wrap { position: relative; }
+    .about-img {
+      width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block;
+      filter: grayscale(20%) contrast(1.05);
+    }
+    .about-img-placeholder {
+      width: 100%; aspect-ratio: 3/4; background: var(--bg3);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .about-img-placeholder span { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--dimmer); }
+
+    /* gold accent line beside photo */
+    .about-img-wrap::after {
+      content: '';
+      position: absolute; top: 20px; left: -12px;
+      width: 2px; height: 60px; background: var(--gold);
+    }
+
+    .about-text { padding-top: 4px; }
+    .about-eyebrow { font-size: 0.6rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold); margin-bottom: 20px; }
+    .about-name {
+      font-family: var(--font-hero); font-size: 4rem; letter-spacing: 0.04em;
+      line-height: 0.9; color: var(--text); margin-bottom: 32px;
+    }
+    .about-body { font-size: 0.93rem; font-weight: 300; line-height: 2; color: var(--dim); }
+    .about-body p { margin-bottom: 16px; }
+
+    /* ── CONTACT ────────────────────────────── */
+    .contact-wrap { padding: 56px 40px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .contact-eyebrow { font-size: 0.6rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold); margin-bottom: 20px; }
+    .contact-name {
+      font-family: var(--font-hero); font-size: clamp(3rem, 8vw, 8rem);
+      letter-spacing: 0.02em; line-height: 0.9;
+      color: transparent; -webkit-text-stroke: 1px rgba(240,236,228,0.25);
+      margin-bottom: 48px;
+    }
+    .contact-email-wrap { display: flex; align-items: center; gap: 20px; justify-content: center; }
+    .contact-rule { width: 40px; height: 1px; background: var(--gold); flex-shrink: 0; }
+    .contact-email {
+      font-family: var(--font-hero); font-size: clamp(1.4rem, 3.5vw, 2.8rem);
+      letter-spacing: 0.06em; color: var(--text); text-decoration: none;
+      transition: color 0.2s;
+    }
+    .contact-email:hover { color: var(--gold); }
+    .contact-note { margin-top: 48px; font-size: 0.82rem; font-weight: 300; color: var(--dimmer); line-height: 1.9; max-width: 400px; text-align: center; }
+
+    /* ── SHARED FORM ELEMENTS ────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 22px; font-family: var(--font-body);
+      font-size: 0.68rem; font-weight: 400; letter-spacing: 0.18em;
+      text-transform: uppercase; border: none; cursor: pointer;
+      transition: background 0.2s, color 0.2s, border-color 0.2s; border-radius: 1px;
+    }
+    .btn-primary { background: var(--gold); color: #080808; }
+    .btn-primary:hover { background: #f0d060; }
+    .btn-secondary { background: transparent; color: var(--dim); border: 1px solid var(--border); }
+    .btn-secondary:hover { color: var(--text); border-color: rgba(240,236,228,0.3); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    input[type=text], input[type=password], input[type=url], textarea {
+      width: 100%; padding: 10px 14px; font-family: var(--font-body);
+      font-size: 0.85rem; font-weight: 300;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 1px; color: var(--text); outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, textarea:focus { border-color: rgba(232,197,71,0.5); }
+    textarea { resize: vertical; min-height: 72px; }
+    label { display: block; font-size: 0.6rem; font-weight: 400; letter-spacing: 0.18em; text-transform: uppercase; color: var(--dim); margin-bottom: 6px; }
+    .field { margin-bottom: 16px; }
+    .loading { padding: 48px; text-align: center; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--dimmer); }
+
+    /* ── ADMIN ───────────────────────────────── */
+    .admin-wrap { padding: 48px 40px; max-width: 680px; }
+    .admin-wrap h2 { font-family: var(--font-hero); font-size: 2.5rem; letter-spacing: 0.05em; margin-bottom: 32px; }
+    .admin-gate p { font-size: 0.82rem; font-weight: 300; color: var(--dim); margin-bottom: 20px; line-height: 1.8; }
+    .admin-error { color: #e05555; font-size: 0.75rem; margin-top: 8px; display: none; }
+    .new-review-form { background: var(--bg2); border: 1px solid var(--border); padding: 24px; margin-bottom: 36px; }
+    .new-review-form h3 { font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); margin-bottom: 20px; }
+    .review-list-header { font-size: 0.6rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dimmer); margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+    .review-item { display: flex; align-items: flex-start; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); gap: 16px; flex-direction: column; }
+    .review-item-top { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 16px; }
+    .review-item-title { font-size: 0.88rem; font-weight: 400; }
+    .review-item-date { font-size: 0.72rem; color: rgba(240,236,228,0.7); margin-top: 3px; font-weight: 300; }
+    .review-item-edit {
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 14px; width: 100%; display: none; gap: 16px;
+      flex-wrap: wrap; align-items: flex-end;
+    }
+    .review-item-edit.open { display: flex; }
+    .review-item-edit .field { margin-bottom: 0; flex: 1; min-width: 160px; }
+    .review-item-edit label { color: rgba(240,236,228,0.6); }
+    .edit-toggle-btn { font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(240,236,228,0.45); cursor: pointer; white-space: nowrap; background: none; border: none; font-family: var(--font-body); padding: 0 4px; }
+    .edit-toggle-btn:hover { color: var(--text); }
+    .review-link-btn { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); cursor: pointer; white-space: nowrap; background: none; border: none; font-family: var(--font-body); }
+    .review-link-btn:hover { text-decoration: underline; }
+    .copy-notice { font-size: 0.68rem; color: var(--gold); margin-left: 8px; opacity: 0; transition: opacity 0.3s; }
+    .empty-state { font-size: 0.8rem; color: var(--dimmer); font-weight: 300; padding: 20px 0; }
+    .dropbox-hint { font-size: 0.7rem; color: var(--dimmer); margin-top: 6px; line-height: 1.7; }
+
+    .video-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .video-input-row .vid-label { width: 160px; flex-shrink: 0; }
+    .video-input-row .vid-url { flex: 1; }
+    .delete-btn { font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: #e05555; cursor: pointer; white-space: nowrap; background: none; border: none; font-family: var(--font-body); padding: 0 8px; }
+    .delete-btn:hover { text-decoration: underline; }
+
+    /* video tabs on review page */
+    .video-tabs {
+      display: flex; gap: 4px; padding: 10px 20px;
+      background: #0a0a0a;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      position: sticky; top: var(--nav-h); z-index: 50;
+    }
+    .video-tab {
+      font-size: 0.68rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text); padding: 8px 18px; cursor: pointer;
+      border: 1px solid rgba(240,236,228,0.25); border-radius: 2px;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+      background: rgba(240,236,228,0.08);
+      font-family: var(--font-body);
+    }
+    .video-tab:hover { color: var(--text); border-color: rgba(240,236,228,0.45); background: rgba(240,236,228,0.14); }
+    .video-tab.active { color: #0a0a0a; background: var(--gold); border-color: var(--gold); font-weight: 600; }
+    .tabs-label { font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(240,236,228,0.5); align-self: center; margin-right: 8px; white-space: nowrap; }
+
+    /* ── REVIEW PAGE ─────────────────────────── */
+    #page-review.active { display: flex; flex-direction: column; min-height: calc(100vh - var(--nav-h)); }
+    .review-header { padding: 20px 32px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--bg2); }
+    .review-header h2 { font-family: var(--font-hero); font-size: 1.6rem; letter-spacing: 0.06em; color: var(--text); }
+    .review-meta { font-size: 0.62rem; color: rgba(240,236,228,0.5); letter-spacing: 0.15em; text-transform: uppercase; }
+    .review-body { display: grid; grid-template-columns: 1fr 360px; flex: 1; }
+    .review-player-col { padding: 24px; border-right: 1px solid var(--border); }
+    .video-wrap { position: relative; width: 100%; background: #000; overflow: hidden; }
+    .review-video { width: 100%; display: block; max-height: 58vh; }
+    /* prevent iOS auto-fullscreen */
+    .review-video::-webkit-media-controls-fullscreen-button { display: none; }
+    .timecode-bar { margin-top: 12px; padding: 10px 14px; background: var(--bg2); border: 1px solid var(--border); }
+    .timecode-bar-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .timecode-display { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.1em; color: var(--gold); font-family: monospace; }
+    .timecode-hint { font-size: 0.62rem; color: rgba(240,236,228,0.45); }
+    .review-scrub-wrap {
+      position: relative; height: 6px; background: rgba(240,236,228,0.1);
+      cursor: pointer; border-radius: 3px;
+    }
+    .review-scrub-fill { height: 100%; background: var(--gold); width: 0%; pointer-events: none; border-radius: 3px; }
+    .review-scrub-head {
+      position: absolute; top: 50%; transform: translate(-50%, -50%);
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--gold); pointer-events: none;
+      box-shadow: 0 0 4px rgba(232,197,71,0.5);
+      opacity: 0; transition: opacity 0.15s; left: 0%;
+    }
+    .review-scrub-wrap:hover .review-scrub-head { opacity: 1; }
+    .review-scrub-wrap.dragging .review-scrub-head { opacity: 1; }
+    .comment-form-area { margin-top: 14px; background: var(--bg2); border: 1px solid var(--border); padding: 16px; }
+    .comment-form-area h4 { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text); margin-bottom: 14px; }
+    .comment-at { font-size: 0.72rem; color: rgba(240,236,228,0.6); margin-bottom: 12px; }
+    .comment-form-area label { color: rgba(240,236,228,0.7); }
+    .comment-form-row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+    .review-comments-col { display: flex; flex-direction: column; background: var(--bg2); }
+    .comments-header { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text); }
+    .comments-list { flex: 1; overflow-y: auto; }
+    .comment-item { padding: 12px 20px; border-bottom: 1px solid var(--border); transition: background 0.15s; }
+    .comment-item:hover { background: rgba(232,197,71,0.04); }
+    .comment-item-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; cursor: pointer; }
+    .comment-item-actions { display: flex; gap: 6px; flex-shrink: 0; opacity: 0; transition: opacity 0.15s; }
+    .comment-item:hover .comment-item-actions { opacity: 1; }
+    .comment-action-btn { font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase; background: none; border: none; cursor: pointer; font-family: var(--font-body); padding: 2px 4px; }
+    .comment-action-btn.edit { color: rgba(240,236,228,0.5); }
+    .comment-action-btn.edit:hover { color: var(--text); }
+    .comment-action-btn.del { color: rgba(224,85,85,0.6); }
+    .comment-action-btn.del:hover { color: #e05555; }
+    .comment-tc { display: inline-block; font-size: 0.68rem; font-weight: 600; color: var(--gold); font-family: monospace; margin-bottom: 4px; letter-spacing: 0.05em; }
+    .comment-author { font-size: 0.72rem; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+    .comment-text { font-size: 0.82rem; font-weight: 300; color: var(--text); line-height: 1.6; }
+    .comment-time { font-size: 0.62rem; color: rgba(240,236,228,0.4); margin-top: 4px; }
+    .comment-edit-area { margin-top: 8px; display: none; }
+    .comment-edit-area textarea { font-size: 0.82rem; min-height: 56px; }
+    .comment-edit-row { display: flex; gap: 8px; margin-top: 6px; }
+    .comment-item.resolved { opacity: 0.45; }
+    .comment-item.resolved .comment-text { text-decoration: line-through; text-decoration-color: rgba(240,236,228,0.3); }
+    .resolve-btn { font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase; background: none; border: 1px solid rgba(240,236,228,0.15); border-radius: 2px; cursor: pointer; font-family: var(--font-body); padding: 2px 7px; color: rgba(240,236,228,0.4); transition: all 0.2s; }
+    .resolve-btn:hover { border-color: #5a9c6a; color: #5a9c6a; }
+    .resolve-btn.resolved { border-color: #5a9c6a; color: #5a9c6a; background: rgba(90,156,106,0.1); }
+    .resolve-btn.resolved:hover { border-color: rgba(240,236,228,0.15); color: rgba(240,236,228,0.4); background: none; }
+    .comment-count { font-size: 0.68rem; background: var(--gold); color: #0a0a0a; border-radius: 10px; padding: 1px 8px; font-weight: 600; margin-left: 8px; vertical-align: middle; }
+    .comments-header { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text); display: flex; align-items: center; justify-content: space-between; }
+    .comments-header-left { display: flex; align-items: center; gap: 4px; }
+    .resolved-toggle { font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; background: none; border: none; cursor: pointer; font-family: var(--font-body); color: rgba(240,236,228,0.4); transition: color 0.2s; padding: 0; }
+    .resolved-toggle:hover { color: var(--text); }
+    .no-comments { padding: 32px 20px; font-size: 0.8rem; color: rgba(240,236,228,0.45); font-weight: 300; line-height: 1.9; }
+    .review-not-found { padding: 56px 40px; }
+    .review-not-found h3 { font-family: var(--font-hero); font-size: 3rem; letter-spacing: 0.04em; margin-bottom: 12px; color: var(--text); }
+    .review-not-found p { font-size: 0.85rem; color: rgba(240,236,228,0.5); font-weight: 300; }
+
+    .review-gate {
+      display: flex; align-items: center; justify-content: center;
+      min-height: calc(100vh - var(--nav-h)); background: var(--bg);
+    }
+    .review-gate-box {
+      background: var(--bg2); border: 1px solid var(--border);
+      padding: 40px 32px; max-width: 340px; width: 90%; text-align: center;
+    }
+    .review-gate-title { font-family: var(--font-hero); font-size: 1.4rem; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .review-gate-sub { font-size: 0.62rem; color: var(--dim); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 28px; }
+    .review-gate-error { font-size: 0.65rem; color: #e05555; margin-top: 8px; min-height: 16px; }
+
+    /* ── PORTFOLIO MODAL PLAYER ─────────────── */
+    .player-modal {
+      display: none; position: fixed; inset: 0;
+      background: rgba(4,4,4,0.94); z-index: 200;
+      align-items: center; justify-content: center; padding: 24px;
+    }
+    .player-modal.open { display: flex; animation: pgIn 0.2s ease both; }
+    .player-shell {
+      width: 100%; max-width: 980px; background: #0d0d0d;
+      overflow: hidden; position: relative;
+      box-shadow: 0 48px 96px rgba(0,0,0,0.7), 0 0 0 1px rgba(240,236,228,0.06);
+    }
+    .player-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 16px; background: #0a0a0a;
+      border-bottom: 1px solid rgba(240,236,228,0.06);
+    }
+    .player-title-text { font-size: 0.62rem; font-weight: 400; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(240,236,228,0.4); }
+    .player-contact-btn {
+      font-size: 0.6rem; font-weight: 400; letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--gold); border: 1px solid rgba(232,197,71,0.35); border-radius: 2px;
+      padding: 4px 12px; text-decoration: none; font-family: var(--font-body);
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .player-contact-btn:hover { background: rgba(232,197,71,0.1); border-color: var(--gold); }
+      width: 26px; height: 26px; border-radius: 50%; background: rgba(240,236,228,0.06);
+      border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s; color: rgba(240,236,228,0.4); font-size: 13px; line-height: 1;
+      font-family: var(--font-body);
+    }
+    .player-close:hover { background: rgba(240,236,228,0.14); color: var(--text); }
+    .player-video-wrap { position: relative; width: 100%; background: #000; }
+    .player-video-wrap video { width: 100%; display: block; max-height: 70vh; }
+
+    .player-shell.fake-fs {
+      position: fixed !important;
+      top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+      z-index: 9999 !important; max-width: none !important; background: #000 !important;
+    }
+    .player-controls { padding: 10px 16px 14px; background: #0a0a0a; display: flex; flex-direction: column; gap: 9px; }
+    .player-progress-wrap {
+      position: relative; height: 6px;
+      background: rgba(240,236,228,0.1); cursor: pointer;
+      border-radius: 3px; margin: 4px 0;
+    }
+    .player-progress-fill { height: 100%; background: var(--gold); width: 0%; pointer-events: none; border-radius: 3px; }
+    .player-playhead {
+      position: absolute; top: 50%; transform: translate(-50%, -50%);
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--gold); pointer-events: none;
+      box-shadow: 0 0 4px rgba(232,197,71,0.5);
+      opacity: 0; transition: opacity 0.15s;
+    }
+    .player-progress-wrap:hover .player-playhead { opacity: 1; }
+    .player-progress-wrap.dragging .player-playhead { opacity: 1; }
+    .player-bottom { display: flex; align-items: center; gap: 12px; }
+    .player-btn { background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; color: rgba(240,236,228,0.5); transition: color 0.2s; flex-shrink: 0; }
+    .player-btn:hover { color: var(--text); }
+    .player-btn svg { width: 15px; height: 15px; fill: currentColor; display: block; }
+    .player-time { font-size: 0.68rem; font-family: monospace; color: rgba(240,236,228,0.35); letter-spacing: 0.05em; white-space: nowrap; }
+    .player-vol-wrap { display: flex; align-items: center; gap: 6px; }
+    .player-vol { -webkit-appearance: none; width: 68px; height: 2px; background: rgba(240,236,228,0.15); border-radius: 1px; cursor: pointer; outline: none; }
+    .player-vol::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; border-radius: 50%; background: var(--gold); cursor: pointer; }
+    .player-spacer { flex: 1; }
+
+    /* ── RESPONSIVE ─────────────────────────── */
+    @media (max-width: 960px) {
+      .video-grid { grid-template-columns: repeat(2, 1fr); }
+      .review-body { grid-template-columns: 1fr; }
+      .review-player-col { border-right: none; border-bottom: 1px solid var(--border); }
+      .review-comments-col { min-height: 360px; }
+    }
+    @media (max-width: 720px) {
+      nav { padding: 0 20px; }
+      .nav-links { display: none; }
+      .hamburger { display: flex; }
+      .hero { padding: 40px 20px 32px; flex-direction: column; gap: 20px; align-items: flex-start; }
+      .hero-name { font-size: clamp(5rem, 22vw, 9rem); }
+      .hero-meta { flex-direction: row; align-items: center; }
+      .hero-role { writing-mode: horizontal-tb; transform: none; }
+      .hero-line { width: 40px; height: 1px; }
+      .cat-label { padding: 24px 20px 16px; }
+      .video-grid { grid-template-columns: 1fr; }
+      .about-wrap, .contact-wrap, .admin-wrap { padding: 36px 20px; }
+      .about-grid { grid-template-columns: 1fr; gap: 40px; }
+      .about-img-wrap::after { display: none; }
+      .review-header { padding: 14px 20px; }
+      .review-player-col { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <span class="nav-monogram" onclick="go('home')">F</span>
+  <ul class="nav-links">
+    <li><a onclick="go('home')"             data-page="home">General Reel</a></li>
+    <li><a onclick="go('docustyle')"        data-page="docustyle">DocuStyle</a></li>
+    <li><a onclick="go('comedy')"           data-page="comedy">Comedy</a></li>
+    <li><a onclick="go('customer-stories')" data-page="customer-stories">Customer Stories</a></li>
+    <li><a onclick="go('food')"             data-page="food">Food</a></li>
+    <li><a onclick="go('about')"            data-page="about">About</a></li>
+    <li><a onclick="go('contact')"          data-page="contact">Contact</a></li>
+  </ul>
+  <div class="hamburger" id="hbg" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a onclick="go('home');closeMenu()">General Reel</a>
+  <a onclick="go('docustyle');closeMenu()">DocuStyle</a>
+  <a onclick="go('comedy');closeMenu()">Comedy</a>
+  <a onclick="go('customer-stories');closeMenu()">Customer Stories</a>
+  <a onclick="go('food');closeMenu()">Food</a>
+  <a onclick="go('about');closeMenu()">About</a>
+  <a onclick="go('contact');closeMenu()">Contact</a>
+</div>
+
+<main>
+
+  <!-- HOME -->
+  <div class="page" id="page-home">
+    <div class="hero">
+      <div class="hero-name">FLOOKES</div>
+      <div class="hero-meta">
+        <div class="hero-gold">JF</div>
+        <div class="hero-line"></div>
+        <div class="hero-role">Editor &nbsp;·&nbsp; Storyteller &nbsp;·&nbsp; Filmmaker</div>
+      </div>
+    </div>
+    <div class="video-grid" id="grid-home"></div>
+  </div>
+
+  <!-- DOCUSTYLE -->
+  <div class="page" id="page-docustyle">
+    <div class="cat-label"><h1>DocuStyle</h1><div class="cat-label-line"></div></div>
+    <div class="video-grid" id="grid-docustyle"></div>
+  </div>
+
+  <!-- COMEDY -->
+  <div class="page" id="page-comedy">
+    <div class="cat-label"><h1>Comedy</h1><div class="cat-label-line"></div></div>
+    <div class="video-grid" id="grid-comedy"></div>
+  </div>
+
+  <!-- CUSTOMER STORIES -->
+  <div class="page" id="page-customer-stories">
+    <div class="cat-label"><h1>Customer Stories</h1><div class="cat-label-line"></div></div>
+    <div class="video-grid" id="grid-customer-stories"></div>
+  </div>
+
+  <!-- FOOD -->
+  <div class="page" id="page-food">
+    <div class="cat-label"><h1>Food</h1><div class="cat-label-line"></div></div>
+    <div class="video-grid" id="grid-food"></div>
+  </div>
+
+  <!-- ABOUT -->
+  <div class="page" id="page-about">
+    <div class="about-wrap">
+      <div class="about-grid">
+        <div class="about-img-wrap">
+          <img class="about-img"
+            src="jonathan.jpg"
+            alt="Jonathan Flookes"
+            onerror="this.outerHTML='<div class=\'about-img-placeholder\'><span>Photo</span></div>'">
+        </div>
+        <div class="about-text">
+          <div class="about-eyebrow">About</div>
+          <div class="about-name">Jonathan<br>Flookes</div>
+          <div class="about-body">
+            <p><em>Texas born. The land does something to a person — makes them either a rancher or a dreamer. Back home, most people would say Flookes had his head in the clouds. They weren't wrong. They just didn't know what he was dreaming about.</em></p>
+            <p><em>At 14, armed with a Hi-8 camera, a collection of action figures, and the unearned confidence that defines all great artists, he began cutting films that no one asked for and everyone ignored. He considers this his most critically acclaimed period.</em></p>
+            <p><em>In 2005 he descended into the basement of Goodby, Silverstein & Partners — not as a prisoner, though the hours suggested otherwise — and discovered his true calling: taking the raw, chaotic footage of other people's visions and turning it into something that makes strangers feel things they didn't budget for.</em></p>
+            <p><em>Three years at TEAK. A decade at Umlaut Films. In 2020, WTBR. The companies change. The obsession does not.</em></p>
+            <p><em>Twenty years of deadlines met, stories told, and frames — thousands upon thousands of frames — arranged in precisely the right order. He will do it again tomorrow. He cannot help himself.</em></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTACT -->
+  <div class="page" id="page-contact">
+    <div class="contact-wrap">
+      <div class="contact-eyebrow">Get in touch</div>
+      <div class="contact-name">FLOOKES</div>
+      <div class="contact-email-wrap">
+        <div class="contact-rule"></div>
+        <a class="contact-email" href="mailto:flookes@gmail.com">flookes@gmail.com</a>
+      </div>
+      <p class="contact-note">Open to freelance projects, collaborations, and new opportunities.</p>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="page" id="page-admin">
+    <div class="admin-wrap">
+      <h2>Review Admin</h2>
+      <div id="adminGate">
+        <p>Private area. Enter your password to manage client reviews.</p>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="adminPassword" placeholder="Enter password"
+            onkeydown="if(event.key==='Enter')checkAdminPassword()">
+        </div>
+        <button class="btn btn-primary" onclick="checkAdminPassword()">Enter</button>
+        <div class="admin-error" id="adminError">Incorrect password.</div>
+      </div>
+      <div id="adminDashboard" style="display:none">
+        <div class="new-review-form">
+          <h3>Create New Review</h3>
+          <div class="field">
+            <label>Project Title</label>
+            <input type="text" id="newReviewTitle" placeholder="e.g. Salesforce Cut v2">
+          </div>
+          <div class="field">
+            <label>Videos — paste one Dropbox link per cut</label>
+            <div id="videoInputs">
+              <div class="video-input-row">
+                <input type="text" placeholder="Label (e.g. 30 sec cut)" class="vid-label">
+                <input type="url" placeholder="https://www.dropbox.com/s/..." class="vid-url">
+              </div>
+            </div>
+            <button type="button" class="btn btn-secondary" style="margin-top:10px;font-size:0.62rem" onclick="addVideoInput()">+ Add Another Cut</button>
+            <div class="dropbox-hint">Right-click video in Dropbox → Share → Copy link.</div>
+          </div>
+          <div class="field">
+            <label>Password <span style="color:var(--dimmer);font-size:0.55rem;letter-spacing:0.08em;text-transform:none">(optional — leave blank for no password)</span></label>
+            <input type="text" id="newReviewPassword" placeholder="e.g. flookes123" autocomplete="off">
+          </div>
+          <div class="field" style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+            <label style="margin:0;cursor:pointer;display:flex;align-items:center;gap:10px">
+              <input type="checkbox" id="newReviewDownload" style="width:16px;height:16px;accent-color:var(--gold);cursor:pointer">
+              Allow client to download video
+            </label>
+          </div>
+          <button class="btn btn-primary" id="createReviewBtn" onclick="createReview()">Create Review Link</button>
+        </div>
+        <div class="review-list-header">Existing Reviews</div>
+        <div id="reviewList"><div class="loading">Loading...</div></div>
+        <div style="margin-top:24px">
+          <button class="btn btn-secondary" onclick="adminLogout()">Log Out</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PORTFOLIO PLAYER MODAL -->
+  <div class="player-modal" id="playerModal" onclick="closePlayer(event)">
+    <div class="player-shell" id="playerShell">
+      <div class="player-topbar">
+        <div class="player-title-text" id="playerLabel"></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <a href="mailto:flookes@gmail.com" class="player-contact-btn">Get in Touch</a>
+          <button class="player-close" onclick="closePlayerDirect()">✕</button>
+        </div>
+      </div>
+      <div class="player-video-wrap">
+        <video id="portfolioVideo" preload="metadata"></video>
+      </div>
+      <div class="player-controls">
+        <div class="player-progress-wrap" id="progressWrap">
+          <div class="player-progress-fill" id="progressFill"></div>
+          <div class="player-playhead" id="progressHead"></div>
+        </div>
+        <div class="player-bottom">
+          <button class="player-btn" onclick="togglePlay()">
+            <svg id="iconPlay"  viewBox="0 0 16 16"><polygon points="3,2 14,8 3,14"/></svg>
+            <svg id="iconPause" viewBox="0 0 16 16" style="display:none"><rect x="3" y="2" width="3.5" height="12"/><rect x="9.5" y="2" width="3.5" height="12"/></svg>
+          </button>
+          <div class="player-vol-wrap">
+            <button class="player-btn" onclick="toggleMute()">
+              <svg viewBox="0 0 16 16"><path d="M2 5h3l4-3v12l-4-3H2z"/><path d="M11 5.5a3.5 3.5 0 0 1 0 5"/></svg>
+            </button>
+            <input type="range" class="player-vol" id="volSlider" min="0" max="1" step="0.05" value="1" oninput="setVolume(this.value)">
+          </div>
+          <span class="player-time" id="playerTime">0:00 / 0:00</span>
+          <div class="player-spacer"></div>
+          <button class="player-btn" onclick="toggleFullscreen()" title="Fullscreen">
+            <svg viewBox="0 0 24 24"><path d="M3 3h7v2H5v5H3V3zm11 0h7v7h-2V5h-5V3zM3 14h2v5h5v2H3v-7zm16 5h-5v2h7v-7h-2v5z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLIENT REVIEW -->
+  <div class="page" id="page-review">
+    <div id="reviewContent"><div class="loading">Loading review...</div></div>
+  </div>
+
+</main>
+
+<script>
+  // ── CONFIG ───────────────────────────────────
+  const ADMIN_PASSWORD = 'flookes2024';
+  const SUPABASE_URL   = 'https://eyifiryyidwjcdigumfj.supabase.co';
+  const SUPABASE_KEY   = 'sb_publishable_lJCtCE_D6-N5JfRMV22bsQ_sn4Emxwr';
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ── VIDEO DATA ───────────────────────────────
+  const videos = {
+    home: [
+      { brand: "Logitech",         title: "Roam Free",               dropboxUrl: "https://www.dropbox.com/scl/fi/9o4sop80qxxc7ss12i1pr/Logitech_RoamFree_Directors-Cut.mp4?rlkey=i6epgp5uktt8pmsessnl05r63&st=mqaq3gti&dl=0" },
+      { brand: "Empire Magazine",  title: "Josh Brolin",             dropboxUrl: "https://www.dropbox.com/scl/fi/j98ta65gnd78qg4emhv3i/Empire_JoshBrolin_The-Searcher_Online_R1.mp4?rlkey=6eejabin39hnrmkrhlnefnxix&st=zlv6g7d7&dl=0" },
+      { brand: "Dollar Shave Club",title: "We're Not A**holes",     dropboxUrl: "https://www.dropbox.com/scl/fi/ybenzgwe7cuyc9n9s2bdz/DSC_Just-Charge-Less_Assholes_Full-Bleep-Full-Blur_15_Online.mp4?rlkey=kj8r1xt64pb080govquebrpvs&st=mdtwx724&dl=0" },
+      { brand: "Gametime",         title: "Surprisingly Big Savings",dropboxUrl: "https://www.dropbox.com/scl/fi/qn7erj4ijdibg8jfz9crv/Gametime_Surprisingly-Big-Savings_30_Directors-Cut.mp4?rlkey=gt7yw3ivg6v20f75snp9ozuc2&st=9brzztle&dl=0" },
+      { brand: "Coppertone",       title: "Beach Tackle",            dropboxUrl: "https://www.dropbox.com/scl/fi/ashgityel1q910a12wjgg/Coppertone_Beach-Tackle_15_GENERIC.mp4?rlkey=583lccne8cfdtz36gbet79m9y&dl=0" },
+      { brand: "VCU Health",       title: "Badge of Honor",          dropboxUrl: "https://www.dropbox.com/scl/fi/07merf8qeduvyu2y6uzir/VCU_Badge-of-Honor_General-Transplant_30_16x9_Web.mp4?rlkey=tqqpe1sxrb7pmn0ru7pnzarg4&st=rjgazrso&dl=0" },
+      { brand: "Instacart",        title: "Beauty",                  dropboxUrl: "https://www.dropbox.com/scl/fi/v63j2t5vwi7jytat22ofp/Instacart_Klarna_Beauty_OnlineHD_1920x1080_ProRes_Stereo_30.mp4?rlkey=os67ldy096cz5824fd327q277&st=y7kmr2z0&dl=0" },
+      { brand: "SFJFF",            title: "Movie Farm",              dropboxUrl: "https://www.dropbox.com/scl/fi/nwegyk3i2fjkzfsi35veu/SFJFF_Movie-Farm_LONG_WebMix.mp4?rlkey=6ore4v5qpx8z91kq4z0tuy44z&st=8alhwgpm&dl=0" },
+      { brand: "Robinhood",        title: "Animal Lover",            dropboxUrl: "https://www.dropbox.com/scl/fi/ask5eoa5fyxpnpsbste5w/robinhood_animal_lover_30_v2a_hero_conformed-1080p.mp4?rlkey=f5d5732n9ix46cmr9ivt85x9s&st=pmpfi60u&dl=0" },
+      { brand: "Zapier",           title: "Brand Video",             dropboxUrl: "https://www.dropbox.com/scl/fi/uyuk0c4yq1xegdy6sdq5h/Zapier_Brand-Video_35_Online.mp4?rlkey=f8fxh1jyz85ib9xbr09gabdvb&st=hpxofnts&dl=0" },
+      { brand: "Angie's List",     title: "Breakup",                 dropboxUrl: "https://www.dropbox.com/scl/fi/a4dg7lus19motwnmenkc7/Angies-List_BreakUp_Short_Final.mp4?rlkey=bjmx64veg2jgtna9wpidp28e9&st=u7elsqfk&dl=0" },
+      { brand: "Webflow",          title: "A Better Way",            dropboxUrl: "https://www.dropbox.com/scl/fi/tsksthyp17c6psl4nbdyz/1_WF_A-Better-way_60_Logo.mp4?rlkey=kv7q1vxa9c4p7ficwh1xuwbb0&dl=0" },
+    ],
+    docustyle: [
+      { brand: "Study.com",              title: "Warm Up to Greatness",    dropboxUrl: "https://www.dropbox.com/scl/fi/9yqitaw0ep5u8p3olw13j/Studycom_WarmUpToGreatness_Anthem_60_W2.mp4?rlkey=xqekportqwlji63yblgjcdfe4&st=0rdimehd&dl=0" },
+      { brand: "American Girl",          title: "Wellie Wishers",          dropboxUrl: "https://www.dropbox.com/scl/fi/7qgfphox85414ehsew0f8/american_girl_welliewishers__friendship_advice_-1080p.mp4?rlkey=a9g7ournbtm645o75ciqozp8q&dl=0" },
+      { brand: "California Olive Ranch", title: "Potluck",                 dropboxUrl: "https://www.dropbox.com/scl/fi/1v7uwo0yb0xhma4206vqz/cor_potluck_v18_jingle_v1-1080p.mp4?rlkey=x451pug7tsbq8rb0etrpsw8k8&dl=0" },
+      { brand: "Airbnb",                 title: "South Africa",            dropboxUrl: "https://www.dropbox.com/scl/fi/3lfwyoobnzxdh5k9gk5dz/AirBNB_SouthAfrica_V12-w-subtitles_APPROVED_ONLINE_ProRes.mp4?rlkey=c44pm6k9up2fsdivkbp8yo1ox&dl=0" },
+      { brand: "Skype",                  title: "Denis Family and Friends", dropboxUrl: "https://www.dropbox.com/scl/fi/rf5hmfb3tbutfj8sblhf6/SKYT_0006603H_Friends_and_Family_Denis-_Denis_Backstory.mp4?rlkey=1sdbvbi5h3x1tet17jvm1awwp&dl=0", thumbTime: 55 },
+      { brand: "UCSF",                   title: "Jimmy",                   dropboxUrl: "https://www.dropbox.com/scl/fi/vxtvd67446jrjtu7dsgdn/UCSFADULT1407H-1.mp4?rlkey=j5fva5iqam4sejxafoyg96u5s&dl=0" },
+    ],
+    comedy: [
+      { brand: "APPA",             title: "Cats",           dropboxUrl: "https://www.dropbox.com/scl/fi/5qykg06eosoxysdonbeyr/APPA_Cats.mp4?rlkey=bjng6akf79rvc0lsiyapii63l&dl=0" },
+      { brand: "Robinhood",        title: "Space Cowboy",   dropboxUrl: "https://www.dropbox.com/scl/fi/tdbj9vxivk1uacr9xcc3o/robinhood_spacecowboy_30_v3a_no_scream_conformed_v1-1080p.mp4?rlkey=qx6ub878a0eveenuqsmorzlky&dl=0" },
+      { brand: "Sausaleisure",     title: "Dome",           dropboxUrl: "https://www.dropbox.com/scl/fi/bs34z9lohu3faj0ifpw1m/sausaleisure_-_dome_v1-1080p.mp4?rlkey=0vptr2oplcx0689bnf7acc1gh&dl=0" },
+      { brand: "Cheesecake Factory",title: "Betsy Ross",   dropboxUrl: "https://www.dropbox.com/scl/fi/pusosz02ksullejo2yla9/CCF_BetsyRoss_Online.mp4?rlkey=1yo35bxdwvth3y7391des2uye&dl=0" },
+      { brand: "Nordstrom",        title: "Chainsaw",       dropboxUrl: "https://www.dropbox.com/scl/fi/aq6k9bfaskuqmkdf0giuk/13009_Chainsaw_REV.mp4?rlkey=ygumylcowjakuoe84z8pjq5u3&dl=0" },
+      { brand: "Barefoot",         title: "Margarita",      dropboxUrl: "https://www.dropbox.com/scl/fi/t62e7o07xehcw71gnmdr7/Barefoot_Margarita-BF-Soap-Opera-Long-Form.mp4?rlkey=tyvz8ybg5cvguy427g4b8s3ji&dl=0" },
+    ],
+    "customer-stories": [
+      { brand: "Corelogic",        title: "Brand",               dropboxUrl: "https://www.dropbox.com/scl/fi/upymbiv3mm1pmgytuztka/23050_CoreLogic_Transatlantic.mp4?rlkey=nrrv4drw5osmfoyd3wo9ng8kz&dl=0" },
+      { brand: "Salesforce",       title: "Foundation",          dropboxUrl: "https://www.dropbox.com/scl/fi/d492du6iqdlgpo074r9lf/SFUSD_SFDC4272_Foundation_Trailer_1920x1080.mp4?rlkey=0opzfb8thx15ncejce0jkhdc2&dl=0" },
+      { brand: "Natural Balance",  title: "Food With Substance", dropboxUrl: "https://www.dropbox.com/scl/fi/m1qz3eqxgr6avy0oyepvn/Natural-Balance_Food_With_Substance_for_Pets_With_Character_61.mp4?rlkey=i3h1jmtj8e0y33k62hvjs0lat&dl=0" },
+      { brand: "Alteryx",          title: "Brand",               dropboxUrl: "https://www.dropbox.com/scl/fi/j58szrukay8w4efdq9k0p/Alteryx_Brand-Video_Directors-Cut_ONLINE.mp4?rlkey=id4ixi026rqwu79qdf1pw1r7t&dl=0" },
+      { brand: "Airbnb",           title: "Itzel",               dropboxUrl: "https://www.dropbox.com/scl/fi/g10fnxrm5oojg5b97fg0t/airbnb_-_itzel_v1-1080p.mp4?rlkey=oyyrp2hyfsvyc9rzdc1j55ae9&dl=0", thumbTime: 56 },
+      { brand: "Google",           title: "L'Huitriere",         dropboxUrl: "https://www.dropbox.com/scl/fi/8ewcsvtf0ltceegca8q3u/google_-_l-huitriere-1080p.mp4?rlkey=ft559q83tfq314g3eoourzf89&dl=0" },
+    ],
+    food: [
+      { brand: "Sunbasket",    title: "Anthem",              dropboxUrl: "https://www.dropbox.com/scl/fi/3bv6q1j4x7sfmrlfwev4a/Sunbasket_Anthem.mp4?rlkey=u2ugz35x0j66x8vh94w2sjys7&dl=0" },
+      { brand: "Dr. Praeger's",title: "Real Ingredients",   dropboxUrl: "https://www.dropbox.com/scl/fi/0sl5wjkiyg1uabqjac2s3/DrPraegers_Real-Ingredients_15_16x9_WEBMIX.mp4?rlkey=eidr43qh86b16kz4alr2o50sv&dl=0" },
+      { brand: "Bigelow Tea",  title: "While You Were Steeping", dropboxUrl: "https://www.dropbox.com/scl/fi/lm2hpglr5eoz35ycseigv/BigelowTea_REV2_HD.mp4?rlkey=1nag443pzkpsy9v7izcq4yq1v&dl=0" },
+      { brand: "Del Taco",     title: "Epic",                dropboxUrl: "https://www.dropbox.com/scl/fi/kdofrscvs4pofy3fzbzrt/Del-Taco_Epic.mp4?rlkey=cwwlpl62tlxt01jixpd1tskzn&dl=0" },
+      { brand: "Krave",        title: "Battle",              dropboxUrl: "https://www.dropbox.com/scl/fi/2q3srb1ui78zwqk0zj5zl/krave__battle__v1-720p.mp4?rlkey=hi02i3cpbf6vi035i3a63kji0&dl=0" },
+      { brand: "Savemart",     title: "Roots Matter",        dropboxUrl: "https://www.dropbox.com/scl/fi/envkc773krq52kybrjvo7/savemart__roots_matter___30-1080p.mp4?rlkey=8r2dbfwfbalq5sklugavi0nmz&dl=0" },
+    ],
+  };
+
+  // ── HELPERS ──────────────────────────────────
+  function toDirectUrl(url) {
+    return url
+      .replace('www.dropbox.com', 'dl.dropboxusercontent.com')
+      .replace('?dl=0','').replace('&dl=0','')
+      .replace('?dl=1','').replace('&dl=1','');
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function fmtTime(s) {
+    const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+    return `${m}:${String(sec).padStart(2,'0')}`;
+  }
+
+  function formatTC(secs) {
+    const fps     = 23.976;
+    const h       = Math.floor(secs / 3600);
+    const m       = Math.floor((secs % 3600) / 60);
+    const s       = Math.floor(secs % 60);
+    const frames  = Math.floor((secs % 1) * fps);
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}:${String(frames).padStart(2,'0')}`;
+  }
+
+  // ── RENDER CARDS ─────────────────────────────
+  function renderCard(v) {
+    if (v.dropboxUrl) {
+      const direct = toDirectUrl(v.dropboxUrl);
+      const label  = `${v.brand} · ${v.title}`;
+      const uid    = 'th_' + Math.random().toString(36).substr(2,7);
+      setTimeout(() => {
+        const vid = document.getElementById(uid);
+        if (!vid) return;
+        vid.addEventListener('loadedmetadata', () => { vid.currentTime = v.thumbTime || 0.4; });
+        vid.addEventListener('seeked', () => { vid.pause(); }, { once: true });
+        vid.load();
+      }, 0);
+      return `<div class="video-card" onclick="openPlayer('${direct}','${label.replace(/'/g,"\\'")}')">
+        <div class="video-thumb-wrap">
+          <video id="${uid}" class="thumb-video" src="${direct}" muted preload="metadata" playsinline></video>
+          <div class="card-overlay">
+            <div class="card-brand">${escHtml(v.brand)}</div>
+            <div class="card-title">${escHtml(v.title)}</div>
+          </div>
+          <div class="card-play"><svg viewBox="0 0 16 16"><polygon points="3,2 14,8 3,14"/></svg></div>
+        </div>
+      </div>`;
+    }
+    return `<div class="video-card">
+      <div class="video-thumb-wrap">
+        <div class="card-play"><svg viewBox="0 0 16 16"><polygon points="3,2 14,8 3,14"/></svg></div>
+        <div class="coming-soon-tag">Coming Soon</div>
+        <div class="card-overlay" style="opacity:1;transform:none">
+          <div class="card-brand">${escHtml(v.brand)}</div>
+          <div class="card-title">${escHtml(v.title)}</div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  Object.entries(videos).forEach(([key, list]) => {
+    const el = document.getElementById(`grid-${key}`);
+    if (el) el.innerHTML = list.map(renderCard).join('');
+  });
+
+  // ── ROUTER ───────────────────────────────────
+  function go(page, subId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('[data-page]').forEach(a => a.classList.remove('active'));
+    const el = document.getElementById(`page-${page}`);
+    if (el) el.classList.add('active');
+    document.querySelectorAll(`[data-page="${page}"]`).forEach(a => a.classList.add('active'));
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    if (page === 'review' && subId) {
+      try { history.pushState({}, '', `#review~${subId}`); } catch(e) {}
+      loadReview(subId);
+    } else if (page === 'admin') {
+      try { history.pushState({}, '', '#admin'); } catch(e) {}
+    } else {
+      try { history.pushState({}, '', `#${page}`); } catch(e) {}
+    }
+  }
+
+  function initRoute() {
+    const h = location.hash.replace('#', '');
+    if (h.startsWith('review~')) go('review', h.replace('review~',''));
+    else if (h === 'admin') go('admin');
+    else go(h || 'home');
+  }
+  window.addEventListener('popstate', initRoute);
+  initRoute();
+
+  // ── MOBILE MENU ──────────────────────────────
+  function toggleMenu() {
+    document.getElementById('mobileMenu').classList.toggle('open');
+    document.getElementById('hbg').classList.toggle('open');
+  }
+  function closeMenu() {
+    document.getElementById('mobileMenu').classList.remove('open');
+    document.getElementById('hbg').classList.remove('open');
+  }
+
+  // ── PORTFOLIO PLAYER ─────────────────────────
+  const pv  = document.getElementById('portfolioVideo');
+  const mod = document.getElementById('playerModal');
+
+  function openPlayer(url, label) {
+    document.getElementById('playerLabel').textContent = label;
+    pv.src = url; pv.load();
+    mod.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    pv.play();
+  }
+  function closePlayerDirect() {
+    exitFakeFS();
+    if (document.fullscreenElement) document.exitFullscreen();
+    mod.classList.remove('open');
+    pv.pause(); pv.src = '';
+    document.body.style.overflow = '';
+    updatePlayIcon();
+  }
+  function closePlayer(e) { if (e.target === mod) closePlayerDirect(); }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (isFakeFS) exitFakeFS(); // Escape exits fake-fs but keeps player open
+      else closePlayerDirect();   // Escape closes player when not in fake-fs
+    }
+  });
+
+  let isFakeFS = false;
+
+  function exitFakeFS() {
+    if (!isFakeFS) return;
+    isFakeFS = false;
+    const s = document.getElementById('playerShell');
+    s.classList.remove('fake-fs');
+    s.querySelector('.player-video-wrap').style.cssText = '';
+    s.querySelector('.player-controls').style.cssText   = '';
+    pv.style.cssText = '';
+    document.body.style.overflow = '';
+  }
+
+  function toggleFullscreen() {
+    const s        = document.getElementById('playerShell');
+    const topbar   = s.querySelector('.player-topbar');
+    const controls = s.querySelector('.player-controls');
+    const wrap     = s.querySelector('.player-video-wrap');
+
+    if (!isFakeFS) {
+      isFakeFS = true;
+      s.classList.add('fake-fs');
+      document.body.style.overflow = 'hidden';
+      requestAnimationFrame(() => {
+        const th     = topbar.offsetHeight;
+        const ch     = controls.offsetHeight;
+        const availH = window.innerHeight - th - ch;
+        const availW = window.innerWidth;
+        // pin controls to bottom
+        controls.style.cssText = `position:absolute;bottom:0;left:0;width:${availW}px;background:#0a0a0a;z-index:2;`;
+        // fill middle with centered video
+        wrap.style.cssText = `position:absolute;top:${th}px;left:0;width:${availW}px;height:${availH}px;display:flex;align-items:center;justify-content:center;background:#000;overflow:hidden;z-index:1;`;
+        pv.style.cssText   = `width:auto;height:auto;max-width:${availW}px;max-height:${availH}px;display:block;`;
+      });
+    } else {
+      exitFakeFS();
+    }
+  }
+
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement) exitFakeFS();
+  });
+
+  function togglePlay() { if (pv.paused) pv.play(); else pv.pause(); }
+  function updatePlayIcon() {
+    document.getElementById('iconPlay').style.display  = pv.paused ? '' : 'none';
+    document.getElementById('iconPause').style.display = pv.paused ? 'none' : '';
+  }
+  pv.addEventListener('play',  updatePlayIcon);
+  pv.addEventListener('pause', updatePlayIcon);
+  pv.addEventListener('click', togglePlay);
+  pv.addEventListener('timeupdate', () => {
+    if (!pv.duration) return;
+    const pct = (pv.currentTime / pv.duration * 100);
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressHead').style.left  = pct + '%';
+    document.getElementById('playerTime').textContent = `${fmtTime(pv.currentTime)} / ${fmtTime(pv.duration)}`;
+  });
+
+  // draggable portfolio scrubber
+  let pvDragging = false;
+  function pvSeekFromEvent(e) {
+    const r = document.getElementById('progressWrap').getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    if (pv.duration) pv.currentTime = pct * pv.duration;
+  }
+  document.getElementById('progressWrap').addEventListener('mousedown', e => {
+    pvDragging = true;
+    document.getElementById('progressWrap').classList.add('dragging');
+    const wasPaused = pv.paused; if (!wasPaused) pv.pause();
+    pvSeekFromEvent(e);
+    const onMove = e => { if (pvDragging) pvSeekFromEvent(e); };
+    const onUp   = () => { pvDragging = false; document.getElementById('progressWrap').classList.remove('dragging'); if (!wasPaused) pv.play(); document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+  function setVolume(val) { pv.volume = val; pv.muted = val == 0; }
+  function toggleMute() { pv.muted = !pv.muted; document.getElementById('volSlider').value = pv.muted ? 0 : pv.volume; }
+
+  // ── ADMIN ─────────────────────────────────────
+  let adminAuthed = false;
+  function checkAdminPassword() {
+    if (document.getElementById('adminPassword').value === ADMIN_PASSWORD) {
+      adminAuthed = true;
+      document.getElementById('adminGate').style.display = 'none';
+      document.getElementById('adminDashboard').style.display = 'block';
+      loadReviewList();
+    } else {
+      document.getElementById('adminError').style.display = 'block';
+    }
+  }
+  function adminLogout() {
+    adminAuthed = false;
+    document.getElementById('adminGate').style.display = 'block';
+    document.getElementById('adminDashboard').style.display = 'none';
+    document.getElementById('adminPassword').value = '';
+    document.getElementById('adminError').style.display = 'none';
+  }
+
+  function addVideoInput() {
+    const row = document.createElement('div');
+    row.className = 'video-input-row';
+    row.innerHTML = `<input type="text" placeholder="Label (e.g. 15 sec cut)" class="vid-label">
+                     <input type="url" placeholder="https://www.dropbox.com/s/..." class="vid-url">
+                     <button type="button" style="background:none;border:none;color:var(--dimmer);cursor:pointer;font-size:1rem;padding:0 4px" onclick="this.parentElement.remove()">✕</button>`;
+    document.getElementById('videoInputs').appendChild(row);
+  }
+
+  async function loadReviewList() {
+    const el = document.getElementById('reviewList');
+    const { data, error } = await db.from('reviews').select('*').order('created_at', { ascending: false });
+    if (error || !data?.length) { el.innerHTML = '<div class="empty-state">No reviews yet.</div>'; return; }
+
+    // fetch open comment counts for all reviews
+    const { data: commentData } = await db.from('comments').select('review_id, resolved').eq('resolved', false);
+    const countMap = {};
+    (commentData || []).forEach(c => { countMap[c.review_id] = (countMap[c.review_id] || 0) + 1; });
+
+    el.innerHTML = data.map(r => {
+      const link   = `${location.origin}${location.pathname}#review~${r.id}`;
+      const date   = new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const count  = countMap[r.id] || 0;
+      const badge  = count > 0
+        ? `<span class="comment-count">${count} open</span>`
+        : `<span style="font-size:0.65rem;color:var(--dimmer);margin-left:6px">✓ clear</span>`;
+      const videos   = r.videos || (r.dropbox_url ? [{ label: 'Cut 1', url: r.dropbox_url }] : []);
+      const cutCount   = videos.length > 1 ? `<span style="font-size:0.68rem;color:rgba(240,236,228,0.7);margin-left:6px;font-weight:400">${videos.length} cuts</span>` : '';
+      const pwBadge    = r.password ? `<span style="font-size:0.62rem;color:#e8c547;margin-left:6px;border:1px solid rgba(232,197,71,0.3);padding:1px 6px;border-radius:2px">🔒 pw</span>` : '';
+      const dlBadge    = r.allow_download ? `<span style="font-size:0.62rem;color:rgba(240,236,228,0.5);margin-left:4px">↓ dl</span>` : '';
+      const dlChecked  = r.allow_download ? 'checked' : '';
+      const pwVal      = r.password ? escHtml(r.password) : '';
+      return `<div class="review-item">
+        <div class="review-item-top">
+          <div>
+            <div class="review-item-title" style="display:flex;align-items:center;flex-wrap:wrap;gap:2px">${escHtml(r.title)}${cutCount}${pwBadge}${dlBadge}${badge}</div>
+            <div class="review-item-date">${date}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+            <button class="review-link-btn" onclick="copyLink('${link}','copy-${r.id}')">Copy Link</button>
+            <span class="copy-notice" id="copy-${r.id}">Copied!</span>
+            <a href="${link}" target="_blank" class="review-link-btn" style="text-decoration:none">Visit ↗</a>
+            <button class="edit-toggle-btn" onclick="toggleEditPanel('edit-${r.id}')">Settings</button>
+            <button class="delete-btn" onclick="deleteReview('${r.id}')">Delete</button>
+          </div>
+        </div>
+        <div class="review-item-edit" id="edit-${r.id}">
+          <div class="field">
+            <label>Password <span style="color:var(--dimmer);font-size:0.55rem;text-transform:none">(leave blank to remove)</span></label>
+            <input type="text" id="pw-${r.id}" value="${pwVal}" placeholder="No password" autocomplete="off" style="font-size:0.78rem;padding:7px 10px">
+          </div>
+          <div class="field" style="display:flex;align-items:center;gap:10px;padding-top:20px">
+            <input type="checkbox" id="dl-${r.id}" ${dlChecked} style="width:14px;height:14px;accent-color:var(--gold);cursor:pointer">
+            <label for="dl-${r.id}" style="cursor:pointer;margin:0;font-size:0.62rem">Allow download</label>
+          </div>
+          <button class="btn btn-primary" style="padding:8px 16px;font-size:0.62rem;white-space:nowrap" onclick="saveReviewSettings('${r.id}')">Save</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function toggleEditPanel(id) {
+    const el = document.getElementById(id);
+    el.classList.toggle('open');
+  }
+
+  async function saveReviewSettings(id) {
+    const password       = document.getElementById(`pw-${id}`).value.trim() || null;
+    const allow_download = document.getElementById(`dl-${id}`).checked;
+    const { error } = await db.from('reviews').update({ password, allow_download }).eq('id', id);
+    if (error) { alert('Error saving: ' + error.message); return; }
+    document.getElementById(`edit-${id}`).classList.remove('open');
+    loadReviewList();
+  }
+
+  async function deleteReview(id) {
+    if (!confirm('Delete this review and all its comments? This cannot be undone.')) return;
+    await db.from('comments').delete().eq('review_id', id);
+    await db.from('reviews').delete().eq('id', id);
+    loadReviewList();
+  }
+
+  function copyLink(link, noticeId) {
+    navigator.clipboard.writeText(link).then(() => {
+      const el = document.getElementById(noticeId);
+      el.style.opacity = '1';
+      setTimeout(() => el.style.opacity = '0', 2000);
+    });
+  }
+
+  function genId() { return Math.random().toString(36).substr(2, 9); }
+
+  async function createReview() {
+    const title    = document.getElementById('newReviewTitle').value.trim();
+    const password = document.getElementById('newReviewPassword').value.trim() || null;
+    const allow_download = document.getElementById('newReviewDownload').checked;
+    if (!title) { alert('Please enter a project title.'); return; }
+    const rows = document.querySelectorAll('.video-input-row');
+    const videos = [];
+    rows.forEach(row => {
+      const label = row.querySelector('.vid-label').value.trim();
+      const url   = row.querySelector('.vid-url').value.trim();
+      if (url) videos.push({ label: label || `Cut ${videos.length + 1}`, url: toDirectUrl(url) });
+    });
+    if (!videos.length) { alert('Please add at least one video link.'); return; }
+    const btn = document.getElementById('createReviewBtn');
+    btn.disabled = true; btn.textContent = 'Creating...';
+    const { error } = await db.from('reviews').insert({
+      id: genId(), title, password, allow_download,
+      dropbox_url: videos[0].url,
+      videos: videos
+    });
+    btn.disabled = false; btn.textContent = 'Create Review Link';
+    if (error) { alert('Error: ' + error.message); return; }
+    document.getElementById('newReviewTitle').value = '';
+    document.getElementById('newReviewPassword').value = '';
+    document.getElementById('newReviewDownload').checked = false;
+    document.querySelectorAll('.vid-label, .vid-url').forEach(i => i.value = '');
+    document.getElementById('videoInputs').innerHTML = `<div class="video-input-row">
+      <input type="text" placeholder="Label (e.g. 30 sec cut)" class="vid-label">
+      <input type="url" placeholder="https://www.dropbox.com/s/..." class="vid-url">
+    </div>`;
+    loadReviewList();
+  }
+
+  const RESEND_KEY = 're_NkRa4qXJ_Ceua1b34bBDe5QE5RP3B2tRv';
+
+  async function sendCommentEmail(reviewTitle, author, timecode, comment, reviewId) {
+    const reviewUrl = `https://www.flookesitup.com#review~${reviewId}`;
+    try {
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${RESEND_KEY}` },
+        body: JSON.stringify({
+          from: 'reviews@flookesitup.com',
+          to: 'flookes@gmail.com',
+          subject: `New comment on "${reviewTitle}"`,
+          html: `
+            <div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#0f0f0f;color:#e0ddd8;padding:32px;border-radius:4px">
+              <div style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#e8c547;margin-bottom:20px">Flookes Review System</div>
+              <h2 style="font-size:20px;font-weight:600;margin-bottom:24px;color:#fff">New Comment</h2>
+              <table style="width:100%;border-collapse:collapse">
+                <tr><td style="padding:10px 0;border-bottom:1px solid #222;font-size:12px;color:#888;width:100px">Project</td><td style="padding:10px 0;border-bottom:1px solid #222;font-size:14px;color:#fff">${reviewTitle}</td></tr>
+                <tr><td style="padding:10px 0;border-bottom:1px solid #222;font-size:12px;color:#888">From</td><td style="padding:10px 0;border-bottom:1px solid #222;font-size:14px;color:#fff">${author}</td></tr>
+                <tr><td style="padding:10px 0;border-bottom:1px solid #222;font-size:12px;color:#888">Timecode</td><td style="padding:10px 0;border-bottom:1px solid #222;font-size:14px;color:#e8c547;font-family:monospace">${timecode}</td></tr>
+                <tr><td style="padding:10px 0;font-size:12px;color:#888;vertical-align:top">Comment</td><td style="padding:10px 0;font-size:14px;color:#fff;line-height:1.6">${comment}</td></tr>
+              </table>
+              <a href="${reviewUrl}" style="display:inline-block;margin-top:28px;padding:12px 24px;background:#e8c547;color:#0a0a0a;font-size:12px;font-weight:600;text-decoration:none;letter-spacing:0.1em;text-transform:uppercase">View Review →</a>
+            </div>
+          `
+        })
+      });
+    } catch(e) { /* silent fail — comment is already saved */ }
+  }
+
+  async function loadReview(reviewId) {
+    const container = document.getElementById('reviewContent');
+    container.innerHTML = '<div class="loading">Loading review...</div>';
+    const { data: review, error } = await db.from('reviews').select('*').eq('id', reviewId).single();
+    if (error || !review) {
+      container.innerHTML = `<div class="review-not-found"><h3>Review Not Found</h3><p>This link may be invalid or expired. Please contact Jonathan for a new one.</p></div>`;
+      return;
+    }
+
+    // password gate
+    if (review.password) {
+      const stored = sessionStorage.getItem(`review_auth_${reviewId}`);
+      if (stored !== review.password) {
+        container.innerHTML = `
+          <div class="review-gate">
+            <div class="review-gate-box">
+              <div class="review-gate-title">${escHtml(review.title)}</div>
+              <div class="review-gate-sub">Password Required</div>
+              <div class="field">
+                <label>Enter Password</label>
+                <input type="password" id="gateInput" placeholder="••••••••"
+                  onkeydown="if(event.key==='Enter')checkReviewPassword('${reviewId}','${review.password}')">
+              </div>
+              <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="checkReviewPassword('${reviewId}','${review.password}')">Enter Review</button>
+              <div class="review-gate-error" id="gateError"></div>
+            </div>
+          </div>`;
+        setTimeout(() => document.getElementById('gateInput')?.focus(), 100);
+        return;
+      }
+    }
+
+    renderReview(review, reviewId);
+  }
+
+  function checkReviewPassword(reviewId, correctPw) {
+    const input = document.getElementById('gateInput').value;
+    if (input === correctPw) {
+      sessionStorage.setItem(`review_auth_${reviewId}`, correctPw);
+      loadReview(reviewId);
+    } else {
+      document.getElementById('gateError').textContent = 'Incorrect password. Try again.';
+    }
+  }
+
+  function renderReview(review, reviewId) {
+    const container = document.getElementById('reviewContent');
+    // normalize videos array — support old single-URL reviews
+    const videos = review.videos || [{ label: 'Cut 1', url: review.dropbox_url }];
+    currentVideoIndex = 0;
+    showResolved = false;
+
+    const tabsHtml = videos.length > 1
+      ? `<div class="video-tabs"><span class="tabs-label">Cuts:</span>${videos.map((v, i) =>
+          `<button class="video-tab${i===0?' active':''}" data-url="${escHtml(v.url)}" onclick="switchReviewVideo(${i},'${reviewId}')">${escHtml(v.label)}</button>`
+        ).join('')}</div>`
+      : '';
+
+    const controlsList = review.allow_download ? '' : 'controlsList="nodownload"';
+    const downloadBtn  = review.allow_download
+      ? `<a href="${videos[0].url}" download class="btn btn-secondary" style="font-size:0.62rem;text-decoration:none" id="downloadBtn">↓ Download</a>`
+      : '';
+
+    container.innerHTML = `
+      ${tabsHtml}
+      <div class="review-header">
+        <h2>${escHtml(review.title)}</h2>
+        <div class="review-meta">Client Review</div>
+      </div>
+      <div class="review-body">
+        <div class="review-player-col">
+          <div class="video-wrap">
+            <video class="review-video" id="reviewVideo" controls ${controlsList} playsinline webkit-playsinline x5-playsinline>
+              <source src="${videos[0].url}" type="video/mp4">
+            </video>
+          </div>
+          <div class="timecode-bar">
+            <div class="timecode-bar-top">
+              <div class="timecode-display" id="tcDisplay">00:00:00:00</div>
+              <div style="display:flex;align-items:center;gap:10px">
+                ${downloadBtn}
+                <div class="timecode-hint">Drag to scrub · pause to comment</div>
+              </div>
+            </div>
+            <div class="review-scrub-wrap" id="reviewScrubWrap">
+              <div class="review-scrub-fill" id="reviewScrubFill"></div>
+              <div class="review-scrub-head" id="reviewScrubHead"></div>
+            </div>
+          </div>
+          <div class="comment-form-area">
+            <h4>Leave a Comment</h4>
+            <div class="comment-at" id="commentAt">Video will pause and timecode will be captured automatically when you post. Or use 📍 to pin a specific frame first.</div>
+            <div class="field"><label>Your Name</label><input type="text" id="commenterName" placeholder="e.g. Sarah" oninput="localStorage.setItem('reviewer_name',this.value)"></div>
+            <div class="field"><label>Comment</label><textarea id="commenterText" placeholder="Type your feedback here..."></textarea></div>
+            <div class="comment-form-row">
+              <button class="btn btn-secondary" onclick="captureTimecode()">📍 Capture Timecode</button>
+              <button class="btn btn-primary" onclick="submitComment('${reviewId}')">Post Comment</button>
+            </div>
+          </div>
+        </div>
+        <div class="review-comments-col">
+          <div class="comments-header" id="commentsHeader">
+            <div class="comments-header-left">All Comments<span class="comment-count" id="commentCount" style="display:none">0</span></div>
+            <button class="resolved-toggle" id="resolvedToggle" onclick="toggleShowResolved('${reviewId}',currentVideoIndex)">Show Resolved</button>
+          </div>
+          <div class="comments-list" id="commentsList"><div class="loading">Loading...</div></div>
+        </div>
+      </div>`;
+
+    currentVideo = document.getElementById('reviewVideo');
+    commentTimecode = null;
+    // restore saved reviewer name
+    const savedName = localStorage.getItem('reviewer_name');
+    if (savedName) document.getElementById('commenterName').value = savedName;
+    currentVideo.addEventListener('timeupdate', () => {
+      document.getElementById('tcDisplay').textContent = formatTC(currentVideo.currentTime);
+      if (currentVideo.duration) {
+        const pct = (currentVideo.currentTime / currentVideo.duration * 100);
+        const fill = document.getElementById('reviewScrubFill');
+        const head = document.getElementById('reviewScrubHead');
+        if (fill) fill.style.width = pct + '%';
+        if (head) head.style.left  = pct + '%';
+      }
+    });
+
+    // draggable review scrubber — attach after DOM is ready
+    setTimeout(() => {
+      const wrap = document.getElementById('reviewScrubWrap');
+      if (!wrap) return;
+      let rvDragging = false;
+      function rvSeek(e) {
+        const r = wrap.getBoundingClientRect();
+        const pct = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+        if (currentVideo.duration) currentVideo.currentTime = pct * currentVideo.duration;
+      }
+      wrap.addEventListener('mousedown', e => {
+        rvDragging = true; wrap.classList.add('dragging');
+        const wasPaused = currentVideo.paused; if (!wasPaused) currentVideo.pause();
+        rvSeek(e);
+        const onMove = e => { if (rvDragging) rvSeek(e); };
+        const onUp   = () => { rvDragging = false; wrap.classList.remove('dragging'); if (!wasPaused) currentVideo.play(); document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+      // touch support
+      wrap.addEventListener('touchstart', e => { rvDragging = true; wrap.classList.add('dragging'); rvSeek(e.touches[0]); e.preventDefault(); }, { passive: false });
+      wrap.addEventListener('touchmove',  e => { if (rvDragging) rvSeek(e.touches[0]); e.preventDefault(); }, { passive: false });
+      wrap.addEventListener('touchend',   e => { rvDragging = false; wrap.classList.remove('dragging'); currentVideo.pause(); }, { passive: false });
+    }, 100);
+    loadComments(reviewId, 0);
+  }
+
+  function switchReviewVideo(index, reviewId) {
+    currentVideoIndex = index;
+    commentTimecode = null;
+    showResolved = false;
+    const btn = document.getElementById('resolvedToggle');
+    if (btn) btn.textContent = 'Show Resolved';
+    document.querySelectorAll('.video-tab').forEach((t, i) => t.classList.toggle('active', i === index));
+    const tabEl = document.querySelectorAll('.video-tab')[index];
+    if (tabEl) document.getElementById('commentsHeader').textContent = `Comments — ${tabEl.textContent}`;
+    const video = document.getElementById('reviewVideo');
+    if (tabEl && tabEl.dataset.url) { video.src = tabEl.dataset.url; video.load(); }
+    document.getElementById('tcDisplay').textContent = '00:00:00:00';
+    const el = document.getElementById('commentAt');
+    el.textContent = 'Capture a timecode before posting.';
+    el.style.color = '';
+    loadComments(reviewId, index);
+  }
+
+  function captureTimecode() {
+    if (!currentVideo) return;
+    commentTimecode = currentVideo.currentTime;
+    currentVideo.pause();
+    const el = document.getElementById('commentAt');
+    el.textContent = `📍 Comment at ${formatTC(commentTimecode)}`;
+    el.style.color = 'var(--gold)';
+  }
+
+  async function submitComment(reviewId) {
+    const author  = document.getElementById('commenterName').value.trim();
+    const comment = document.getElementById('commenterText').value.trim();
+    if (!author)  { alert('Please enter your name.'); return; }
+    if (!comment) { alert('Please enter a comment.'); return; }
+    // Auto-capture current timecode if not already captured
+    const tc = commentTimecode !== null ? commentTimecode : (currentVideo ? currentVideo.currentTime : 0);
+    currentVideo && currentVideo.pause();
+    const { error } = await db.from('comments').insert({ review_id: reviewId, author, timecode: tc, comment, video_index: currentVideoIndex });
+    if (error) { alert('Error: ' + error.message); return; }
+    // send email notification
+    const { data: review } = await db.from('reviews').select('title').eq('id', reviewId).single();
+    sendCommentEmail(review?.title || reviewId, author, formatTC(tc), comment, reviewId);
+    document.getElementById('commenterText').value = '';
+    commentTimecode = null;
+    const el = document.getElementById('commentAt');
+    el.textContent = 'Capture a timecode before posting, or post now to use current position.';
+    el.style.color = '';
+    loadComments(reviewId, currentVideoIndex);
+  }
+
+  let showResolved = false;
+
+  function toggleShowResolved(reviewId, videoIndex) {
+    showResolved = !showResolved;
+    const btn = document.getElementById('resolvedToggle');
+    if (btn) btn.textContent = showResolved ? 'Hide Resolved' : 'Show Resolved';
+    loadComments(reviewId, videoIndex);
+  }
+
+  async function loadComments(reviewId, videoIndex) {
+    const el = document.getElementById('commentsList');
+    const { data, error } = await db.from('comments').select('*')
+      .eq('review_id', reviewId)
+      .eq('video_index', videoIndex)
+      .order('timecode', { ascending: true });
+    if (error) { el.innerHTML = '<div class="no-comments">Could not load comments.</div>'; return; }
+    if (!data?.length) { el.innerHTML = '<div class="no-comments">No comments yet.<br><br>Pause the video and post your feedback below.</div>'; return; }
+
+    const visible = showResolved ? data : data.filter(c => !c.resolved);
+    const total   = data.length;
+    const open    = data.filter(c => !c.resolved).length;
+
+    // update count badge
+    const badge = document.getElementById('commentCount');
+    if (badge) { badge.textContent = open; badge.style.display = open > 0 ? '' : 'none'; }
+
+    if (!visible.length) {
+      el.innerHTML = '<div class="no-comments">All comments resolved! 🎉<br><br>Click "Show Resolved" to see them.</div>';
+      return;
+    }
+
+    el.innerHTML = visible.map(c => {
+      const posted = new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      const isResolved = c.resolved;
+      return `<div class="comment-item${isResolved ? ' resolved' : ''}" id="ci-${c.id}">
+        <div class="comment-item-top" onclick="seekTo(${c.timecode})">
+          <div style="flex:1">
+            <div class="comment-tc">${formatTC(c.timecode)}</div>
+            <div class="comment-author">${escHtml(c.author)}</div>
+            <div class="comment-text" id="ct-${c.id}">${escHtml(c.comment)}</div>
+            <div class="comment-time">${posted}</div>
+          </div>
+          <div class="comment-item-actions" onclick="event.stopPropagation()">
+            <button class="resolve-btn${isResolved ? ' resolved' : ''}" onclick="toggleResolve('${c.id}',${isResolved},'${reviewId}',${videoIndex})">${isResolved ? '✓ Resolved' : 'Resolve'}</button>
+            <button class="comment-action-btn edit" onclick="startEditComment('${c.id}','${escHtml(c.comment).replace(/'/g,"\\'")}')">Edit</button>
+            <button class="comment-action-btn del" onclick="deleteComment('${c.id}','${reviewId}',${videoIndex})">Delete</button>
+          </div>
+        </div>
+        <div class="comment-edit-area" id="ce-${c.id}">
+          <textarea id="cet-${c.id}">${escHtml(c.comment)}</textarea>
+          <div class="comment-edit-row">
+            <button class="btn btn-primary" style="padding:6px 14px;font-size:0.62rem" onclick="saveEditComment('${c.id}','${reviewId}',${videoIndex})">Save</button>
+            <button class="btn btn-secondary" style="padding:6px 14px;font-size:0.62rem" onclick="cancelEditComment('${c.id}')">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function toggleResolve(id, currentState, reviewId, videoIndex) {
+    await db.from('comments').update({ resolved: !currentState }).eq('id', id);
+    loadComments(reviewId, videoIndex);
+  }
+
+  function startEditComment(id, text) {
+    document.getElementById(`ce-${id}`).style.display = 'block';
+    document.getElementById(`ct-${id}`).style.display = 'none';
+    document.getElementById(`cet-${id}`).value = text;
+    document.getElementById(`cet-${id}`).focus();
+  }
+
+  function cancelEditComment(id) {
+    document.getElementById(`ce-${id}`).style.display = 'none';
+    document.getElementById(`ct-${id}`).style.display = 'block';
+  }
+
+  async function saveEditComment(id, reviewId, videoIndex) {
+    const newText = document.getElementById(`cet-${id}`).value.trim();
+    if (!newText) return;
+    const { error } = await db.from('comments').update({ comment: newText }).eq('id', id);
+    if (error) { alert('Error saving: ' + error.message); return; }
+    loadComments(reviewId, videoIndex);
+  }
+
+  async function deleteComment(id, reviewId, videoIndex) {
+    if (!confirm('Delete this comment?')) return;
+    await db.from('comments').delete().eq('id', id);
+    loadComments(reviewId, videoIndex);
+  }
+
+  function seekTo(tc) { if (currentVideo) { currentVideo.currentTime = tc; currentVideo.pause(); } }
+</script>
+</body>
+</html>
