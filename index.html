@@ -88,7 +88,6 @@
     .nav-links a.active { color: var(--gold); }
 
     .nav-screening-title {
-      display: none;
       font-family: var(--font-hero);
       font-size: 1.6rem; letter-spacing: 0.05em;
       color: var(--text); line-height: 1;
@@ -561,7 +560,7 @@
 <nav>
   <div style="display:flex;align-items:center;gap:16px">
     <span class="nav-monogram" onclick="go('home')">F</span>
-    <span class="nav-screening-title" id="navScreeningTitle">Client Screening</span>
+    <span class="nav-screening-title" id="navScreeningTitle" style="display:none">Client Screening</span>
   </div>
   <ul class="nav-links" id="navLinks">
     <li><a onclick="go('home')"             data-page="home">General Reel</a></li>
