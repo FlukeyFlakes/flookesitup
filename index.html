@@ -1486,10 +1486,11 @@
 
   function downloadVideo() {
     const video = document.getElementById('reviewVideo');
-    if (!video || !video.src) return;
-    // Keep the full URL (including rlkey/st params Dropbox needs), just swap
-    // the domain back to www.dropbox.com and append dl=1 to force a download.
-    let src = video.src.replace('dl.dropboxusercontent.com', 'www.dropbox.com');
+    // currentSrc is what the browser is actually playing (resolves the <source> tag)
+    // src on the <video> element itself is empty when src is set via <source> child
+    const rawSrc = video.currentSrc || video.querySelector('source')?.src;
+    if (!rawSrc) { alert('No video loaded.'); return; }
+    let src = rawSrc.replace('dl.dropboxusercontent.com', 'www.dropbox.com');
     const sep = src.includes('?') ? '&' : '?';
     window.open(src + sep + 'dl=1', '_blank');
   }
