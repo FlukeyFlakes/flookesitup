@@ -816,6 +816,14 @@
       .replace('?dl=1','').replace('&dl=1','');
   }
 
+  function toDownloadUrl(url) {
+    // Convert direct CDN URL back to www.dropbox.com with dl=1 so Dropbox
+    // serves it with Content-Disposition: attachment (forces browser download).
+    let u = url.replace('dl.dropboxusercontent.com', 'www.dropbox.com');
+    const sep = u.includes('?') ? '&' : '?';
+    return u + sep + 'dl=1';
+  }
+
   function escHtml(str) {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
@@ -1253,7 +1261,7 @@
 
     const controlsList = review.allow_download ? '' : 'controlsList="nodownload"';
     const downloadBtn  = review.allow_download
-      ? `<button class="btn btn-secondary" style="font-size:0.62rem" id="downloadBtn" onclick="downloadVideo()">↓ Download</button>`
+      ? `<a href="${toDownloadUrl(videos[0].url)}" target="_blank" rel="noopener" class="btn btn-secondary" style="font-size:0.62rem;text-decoration:none" id="downloadBtn">↓ Download</a>`
       : '';
 
     container.innerHTML = `
@@ -1354,10 +1362,16 @@
     const tabEl = document.querySelectorAll('.video-tab')[index];
     if (tabEl) document.getElementById('commentsHeader').textContent = `Comments — ${tabEl.textContent}`;
     const video = document.getElementById('reviewVideo');
-    if (tabEl && tabEl.dataset.url) { video.src = tabEl.dataset.url; video.load(); }
+    if (tabEl && tabEl.dataset.url) {
+      video.src = tabEl.dataset.url;
+      video.load();
+      // Keep the download link pointing at the currently active cut
+      const dlBtn = document.getElementById('downloadBtn');
+      if (dlBtn) dlBtn.href = toDownloadUrl(tabEl.dataset.url);
+    }
     document.getElementById('tcDisplay').textContent = '00:00:00:00';
     const el = document.getElementById('commentAt');
-    el.textContent = 'Capture a timecode before posting.';
+    el.textContent = 'Pause the video at any point, then post your comment — the timecode will be captured automatically.';
     el.style.color = '';
     loadComments(reviewId, index);
   }
@@ -1483,17 +1497,6 @@
   }
 
   function seekTo(tc) { if (currentVideo) { currentVideo.currentTime = tc; currentVideo.pause(); } }
-
-  function downloadVideo() {
-    const video = document.getElementById('reviewVideo');
-    // currentSrc is what the browser is actually playing (resolves the <source> tag)
-    // src on the <video> element itself is empty when src is set via <source> child
-    const rawSrc = video.currentSrc || video.querySelector('source')?.src;
-    if (!rawSrc) { alert('No video loaded.'); return; }
-    let src = rawSrc.replace('dl.dropboxusercontent.com', 'www.dropbox.com');
-    const sep = src.includes('?') ? '&' : '?';
-    window.open(src + sep + 'dl=1', '_blank');
-  }
 </script>
 </body>
 </html>
