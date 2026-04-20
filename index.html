@@ -1484,31 +1484,15 @@
 
   function seekTo(tc) { if (currentVideo) { currentVideo.currentTime = tc; currentVideo.pause(); } }
 
-  async function downloadVideo() {
+  function downloadVideo() {
     const video = document.getElementById('reviewVideo');
     if (!video || !video.src) return;
-    const url = video.src;
-    const btn = document.getElementById('downloadBtn');
-    if (btn) { btn.textContent = '↓ Loading...'; btn.disabled = true; }
-    try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Network response not ok');
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      // Pull filename from the URL path, fall back to video.mp4
-      const rawName = url.split('?')[0].split('/').pop();
-      a.download = rawName || 'video.mp4';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
-    } catch(e) {
-      alert('Direct download unavailable. The video will open in a new tab — right-click and choose "Save Video As" to download it.');
-      window.open(url, '_blank');
-    }
-    if (btn) { btn.textContent = '↓ Download'; btn.disabled = false; }
+    // Convert dl.dropboxusercontent.com direct URL back to a Dropbox ?dl=1 URL.
+    // Dropbox serves that with Content-Disposition: attachment, which triggers
+    // a native browser Save dialog without any CORS fetch needed.
+    let src = video.src.split('?')[0]; // strip existing query params
+    src = src.replace('dl.dropboxusercontent.com', 'www.dropbox.com');
+    window.open(src + '?dl=1', '_blank');
   }
 </script>
 </body>
