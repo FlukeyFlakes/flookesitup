@@ -90,10 +90,8 @@
     .nav-screening-title {
       display: none;
       font-family: var(--font-hero);
-      font-size: 1rem; letter-spacing: 0.18em;
-      text-transform: uppercase; color: var(--gold);
-      position: absolute; left: 50%; transform: translateX(-50%);
-      white-space: nowrap;
+      font-size: 1.6rem; letter-spacing: 0.05em;
+      color: var(--text); line-height: 1;
     }
 
     .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; }
@@ -561,14 +559,16 @@
 
 <!-- NAV -->
 <nav>
-  <span class="nav-monogram" onclick="go('home')">F</span>
-  <span class="nav-screening-title" id="navScreeningTitle">Client Screening</span>
+  <div style="display:flex;align-items:center;gap:16px">
+    <span class="nav-monogram" onclick="go('home')">F</span>
+    <span class="nav-screening-title" id="navScreeningTitle">Client Screening</span>
+  </div>
   <ul class="nav-links" id="navLinks">
     <li><a onclick="go('home')"             data-page="home">General Reel</a></li>
-    <li><a onclick="go('docustyle')"        data-page="docustyle">DocuStyle</a></li>
     <li><a onclick="go('comedy')"           data-page="comedy">Comedy</a></li>
-    <li><a onclick="go('customer-stories')" data-page="customer-stories">Customer Stories</a></li>
+    <li><a onclick="go('docustyle')"        data-page="docustyle">DocuStyle</a></li>
     <li><a onclick="go('food')"             data-page="food">Food</a></li>
+    <li><a onclick="go('customer-stories')" data-page="customer-stories">Customer Stories</a></li>
     <li><a onclick="go('about')"            data-page="about">About</a></li>
     <li><a onclick="go('contact')"          data-page="contact">Contact</a></li>
   </ul>
@@ -900,10 +900,9 @@
     document.querySelectorAll(`[data-page="${page}"]`).forEach(a => a.classList.add('active'));
     window.scrollTo({ top: 0, behavior: 'instant' });
 
-    // On review page: hide nav links & hamburger, show "Client Screening" title
     const isReview = page === 'review';
-    document.getElementById('navLinks').style.display        = isReview ? 'none' : '';
-    document.getElementById('hbg').style.display             = isReview ? 'none' : '';
+    document.getElementById('navLinks').style.display          = isReview ? 'none' : '';
+    document.getElementById('hbg').style.display               = isReview ? 'none' : '';
     document.getElementById('navScreeningTitle').style.display = isReview ? '' : 'none';
 
     if (page === 'review' && subId) {
@@ -1195,7 +1194,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${RESEND_KEY}` },
         body: JSON.stringify({
-          from: 'reviews@flookesitup.com',
+          from: 'reviews@send.flookesitup.com',
           to: 'flookes@gmail.com',
           subject: `New comment on "${reviewTitle}"`,
           html: `
@@ -1283,7 +1282,6 @@
       ${tabsHtml}
       <div class="review-header">
         <h2>${escHtml(review.title)}</h2>
-        <div class="review-meta">Client Review</div>
       </div>
       <div class="review-body">
         <div class="review-player-col">
@@ -1384,7 +1382,7 @@
     }
     document.getElementById('tcDisplay').textContent = '00:00:00:00';
     const el = document.getElementById('commentAt');
-    el.textContent = 'Capture a timecode before posting.';
+    el.textContent = 'Pause the video at any point, then post your comment — the timecode will be captured automatically.';
     el.style.color = '';
     loadComments(reviewId, index);
   }
