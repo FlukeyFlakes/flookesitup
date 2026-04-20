@@ -1253,7 +1253,7 @@
 
     const controlsList = review.allow_download ? '' : 'controlsList="nodownload"';
     const downloadBtn  = review.allow_download
-      ? `<a href="${videos[0].url}" download class="btn btn-secondary" style="font-size:0.62rem;text-decoration:none" id="downloadBtn">↓ Download</a>`
+      ? `<button class="btn btn-secondary" style="font-size:0.62rem" id="downloadBtn" onclick="downloadVideo()">↓ Download</button>`
       : '';
 
     container.innerHTML = `
@@ -1288,7 +1288,6 @@
             <div class="field"><label>Your Name</label><input type="text" id="commenterName" placeholder="e.g. Sarah" oninput="localStorage.setItem('reviewer_name',this.value)"></div>
             <div class="field"><label>Comment</label><textarea id="commenterText" placeholder="Type your feedback here..."></textarea></div>
             <div class="comment-form-row">
-              <button class="btn btn-secondary" onclick="captureTimecode()">📍 Capture Timecode</button>
               <button class="btn btn-primary" onclick="submitComment('${reviewId}')">Post Comment</button>
             </div>
           </div>
@@ -1484,6 +1483,33 @@
   }
 
   function seekTo(tc) { if (currentVideo) { currentVideo.currentTime = tc; currentVideo.pause(); } }
+
+  async function downloadVideo() {
+    const video = document.getElementById('reviewVideo');
+    if (!video || !video.src) return;
+    const url = video.src;
+    const btn = document.getElementById('downloadBtn');
+    if (btn) { btn.textContent = '↓ Loading...'; btn.disabled = true; }
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Network response not ok');
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      // Pull filename from the URL path, fall back to video.mp4
+      const rawName = url.split('?')[0].split('/').pop();
+      a.download = rawName || 'video.mp4';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+    } catch(e) {
+      alert('Direct download unavailable. The video will open in a new tab — right-click and choose "Save Video As" to download it.');
+      window.open(url, '_blank');
+    }
+    if (btn) { btn.textContent = '↓ Download'; btn.disabled = false; }
+  }
 </script>
 </body>
 </html>
